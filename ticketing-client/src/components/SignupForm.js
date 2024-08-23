@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Grid } from '@mui/material';
+import { TextField, Button, Grid, Snackbar, Alert } from '@mui/material';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import addYears from 'date-fns/addYears';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const SignupForm = () => {
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -13,54 +15,41 @@ const SignupForm = () => {
   const [birthday, setBirthday] = useState(null);
   const [isFormValid, setIsFormValid] = useState(false);
 
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
+  const [open, setOpen] = useState(false);
+
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [nameError, setNameError] = useState('');
-
+  
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePassword = (password) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/.test(password);
+  const validateName = (name) => /^[A-Z][a-z\s]*$/.test(name);
   useEffect(() => {
-    // Check if all fields are filled and valid
     if (
       firstName &&
       lastName &&
       email &&
       password &&
       birthday &&
-      !emailError &&
-      !passwordError &&
-      !nameError
+      !isError
     ) {
       setIsFormValid(true);
     } else {
       setIsFormValid(false);
     }
-  }, [firstName, lastName, email, password, birthday, emailError, passwordError, nameError]);
-
-  const handleSubmit = async (event) => {
-    event.preventDefault();
-    try {
-      const response = await axios.post('http://localhost:5000/api/auth/signup', {
-        firstName,
-        lastName,
-        email,
-        password,
-        birthday: birthday.toISOString().slice(0, 10) // Assuming your backend expects a date string
-      });
-      console.log('Signup Success:', response.data);
-      alert('Signup Successful!');
-    } catch (error) {
-      console.error('Signup Error:', error.response ? error.response.data : error.message);
-      alert('Signup Failed: ' + (error.response ? error.response.data : error.message));
-    }
-    
-  };
+  }, [firstName, lastName, email, password, birthday, isError]);
 
   const handleEmailChange = (event) => {
     const value = event.target.value;
     setEmail(value);
     if (!validateEmail(value)) {
       setEmailError('Please enter a valid email address.');
+      setIsError(true);
     } else {
       setEmailError('');
+      setIsError(false);
     }
   };
 
@@ -71,50 +60,53 @@ const SignupForm = () => {
       setPasswordError(
         'Password must be 8-20 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character.'
       );
+      setIsError(true);
     } else {
       setPasswordError('');
+      setIsError(false);
     }
   };
 
   const handleNameChange = (event, setName) => {
     const value = event.target.value;
-  
-    // Remove non-alphabetic characters except spaces
-    const formattedValue = value
-      .replace(/[^a-zA-Z\s]/g, '') // Remove all non-alphabetic characters except spaces
-      .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
-      .trim(); // Remove leading and trailing spaces
-    
-    // Capitalize the first letter of each word and make the rest lowercase
-    const capitalizedValue = formattedValue
-      .toLowerCase()
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-  
+    const formattedValue = value.replace(/[^a-zA-Z\s]/g, '').replace(/\s+/g, ' ').trim();
+    const capitalizedValue = formattedValue.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     setName(capitalizedValue);
-    
+
     if (!validateName(capitalizedValue)) {
       setNameError('Only letters are allowed, and the first letter of each word must be capitalized.');
+      setIsError(true);
     } else {
       setNameError('');
+      setIsError(false);
     }
   };
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password) => {
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/;
-    return passwordRegex.test(password);
-  };
-
-  const validateName = (name) => {
-    const nameRegex = /^[A-Z][a-zA-Z]*$/;
-    return nameRegex.test(name);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (isFormValid && !isError) {
+      try {
+        const response = await axios.post('http://localhost:5000/api/auth/signup', {
+          firstName,
+          lastName,
+          email,
+          password,
+          birthday: birthday.toISOString().slice(0, 10)
+        });
+        setMessage('Signup Successful!');
+        setIsError(false);
+        setOpen(true);
+        setTimeout(() => navigate('/login'), 2000);
+      } catch (error) {
+        setMessage(error.response ? error.response.data : 'Signup Failed!');
+        setIsError(true);
+        setOpen(true);
+      }
+    } else {
+      setMessage('Please fill in all fields correctly.');
+      setIsError(true);
+      setOpen(true);
+    }
   };
 
   return (
@@ -134,7 +126,7 @@ const SignupForm = () => {
             InputProps={{
               style: { borderRadius: '10px' }
             }}
-            inputProps={{ maxLength: 50 }} // Set maximum length if needed
+            inputProps={{ maxLength: 50 }}
           />
         </Grid>
         <Grid item xs={6}>
@@ -151,7 +143,7 @@ const SignupForm = () => {
             InputProps={{
               style: { borderRadius: '10px' }
             }}
-            inputProps={{ maxLength: 50 }} // Set maximum length if needed
+            inputProps={{ maxLength: 50 }}
           />
         </Grid>
         <Grid item xs={12}>
@@ -203,13 +195,12 @@ const SignupForm = () => {
                 variant="outlined"
                 required
                 fullWidth
-                label="Date Of Birth *"
+                label="Date Of Birth"
                 name="birthday"
                 InputProps={{
                   style: { borderRadius: '10px' }
                 }}
                 inputProps={{ readOnly: true }}
-
               />
             }
           />
@@ -221,12 +212,17 @@ const SignupForm = () => {
             variant="contained"
             color="primary"
             style={{ borderRadius: '10px' }}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isError}
           >
             Sign Up
           </Button>
         </Grid>
       </Grid>
+      <Snackbar open={open} autoHideDuration={6000} onClose={() => setOpen(false)}>
+        <Alert onClose={() => setOpen(false)} severity={isError ? 'error' : 'success'} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </form>
   );
 };

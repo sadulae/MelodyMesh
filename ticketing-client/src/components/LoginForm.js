@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Grid } from '@mui/material';
+import { TextField, Button, Grid, Snackbar, Alert } from '@mui/material';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+
 const LoginForm = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isFormValid, setIsFormValid] = useState(false);
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Check if all fields are filled and valid
-    if (email && password && !emailError && !passwordError) {
-      setIsFormValid(true);
-    } else {
-      setIsFormValid(false);
-    }
+    setIsFormValid(email && password && !emailError && !passwordError);
   }, [email, password, emailError, passwordError]);
 
   const handleSubmit = async (event) => {
@@ -24,12 +25,15 @@ const LoginForm = () => {
         email,
         password
       });
-      console.log('Login Success:', response.data);
-      alert('Login Successful!');
       localStorage.setItem('token', response.data.token); // Save the token to local storage
+      setMessage('Login Successful!');
+      setIsError(false);
+      setOpen(true);
+      setTimeout(() => navigate('/home'), 2000); // Redirect to home page after 2 seconds
     } catch (error) {
-      console.error('Login Error:', error.response ? error.response.data : error.message);
-      alert('Login Failed: ' + (error.response ? error.response.data : error.message));
+      setMessage('Login Failed: ' + (error.response ? error.response.data : error.message));
+      setIsError(true);
+      setOpen(true);
     }
   };
 
@@ -55,16 +59,8 @@ const LoginForm = () => {
     }
   };
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password) => {
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/;
-    return passwordRegex.test(password);
-  };
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePassword = (password) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/.test(password);
 
   return (
     <form onSubmit={handleSubmit}>
@@ -103,6 +99,15 @@ const LoginForm = () => {
             }}
           />
         </Grid>
+        <Grid item xs={12} style={{ textAlign: 'right' }}>
+          <Button
+            color="primary"
+            style={{ textTransform: 'none' }} // Optional: remove text uppercase style if preferred
+            onClick={() => console.log('Navigate to Forgot Password page')} // Replace with actual navigation logic later
+          >
+            Forgot Password?
+          </Button>
+        </Grid>
         <Grid item xs={12}>
           <Button
             type="submit"
@@ -116,6 +121,11 @@ const LoginForm = () => {
           </Button>
         </Grid>
       </Grid>
+      <Snackbar open={open} autoHideDuration={6000} onClose={() => setOpen(false)}>
+        <Alert onClose={() => setOpen(false)} severity={isError ? 'error' : 'success'} sx={{ width: '100%' }}>
+          {message}
+        </Alert>
+      </Snackbar>
     </form>
   );
 };
