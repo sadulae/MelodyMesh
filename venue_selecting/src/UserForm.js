@@ -1,8 +1,24 @@
-// src/UserForm.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TextField, Button, Grid, Typography, Box, Radio, RadioGroup, FormControl, FormControlLabel, FormLabel } from '@mui/material';
+import {
+  TextField,
+  Button,
+  Grid,
+  Typography,
+  Box,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  MenuItem,
+  Select,
+  InputLabel
+} from '@mui/material';
 import { PhotoCamera } from '@mui/icons-material';
+import MapComponent from './MapComponent'; // Import the MapComponent
+
+
 
 const UserForm = () => {
   const navigate = useNavigate();
@@ -14,35 +30,117 @@ const UserForm = () => {
     email: '',
     photos: [],
     photoPreviews: [],
-    category: '',  // New state for radio button
-  });
+    category: '',
+    capacity: '',
+    customMessage: '',
+    mapLocation: null,
+  })
+
+  const [formErrors, setFormErrors] = useState({});
+
+  // Validation functions
+  const validatePlaceName = (name) => {
+    const sinhalaRegex = /^[A-Za-z\s\u0D80-\u0DFF]+$/;
+    return sinhalaRegex.test(name);
+  };
+
+  const validatePhone = (phone) => {
+    const phoneRegex = /^\d{0,15}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let valid = true;
+
+    if (name === 'placeName' && !validatePlaceName(value)) {
+      valid = false;
+      setFormErrors({ ...formErrors, placeName: 'Place name must only contain valid letters (Sinhala allowed).' });
+    } else if (name === 'phone' && !validatePhone(value)) {
+      valid = false;
+      setFormErrors({ ...formErrors, phone: 'Phone number must contain only digits (up to 15).' });
+    } else if (name === 'email' && !validateEmail(value)) {
+      valid = false;
+      setFormErrors({ ...formErrors, email: 'Invalid email address format.' });
+    } else {
+      setFormErrors({ ...formErrors, [name]: '' });
+    }
+
+    if (valid) {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handlePhotoChange = (e) => {
     const files = Array.from(e.target.files);
-    const photoPreviews = files.map((file) => URL.createObjectURL(file));
+    if (files.length < 2 || files.length > 6) {
+      setFormErrors({ ...formErrors, photos: 'Please select between 2 to 6 photos.' });
+      return;
+    }
 
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    for (const file of files) {
+      if (!validTypes.includes(file.type)) {
+        setFormErrors({ ...formErrors, photos: 'Only JPEG, PNG, and WEBP formats are allowed.' });
+        return;
+      }
+    }
+
+    const photoPreviews = files.map((file) => URL.createObjectURL(file));
     setFormData({
       ...formData,
       photos: [...formData.photos, ...files],
       photoPreviews: [...formData.photoPreviews, ...photoPreviews],
     });
+    setFormErrors({ ...formErrors, photos: '' });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate that all required fields are filled out
+    if (
+      !formData.placeName ||
+      !formData.address ||
+      !formData.phone ||
+      !formData.email ||
+      !formData.category ||
+      !formData.capacity ||
+      !formData.customMessage ||
+      formData.photos.length < 2
+    ) {
+      setFormErrors({ ...formErrors, submit: 'Please fill in all required fields correctly.' });
+      return;
+    }
+
     // Navigate to the DisplayPage and pass the formData
     navigate('/display', { state: { formData } });
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Add Place Information
+
+    <Box
+      component="form"
+      onSubmit={handleSubmit}
+      sx={{
+        maxWidth: 600,
+        mx: 'auto',
+        mt: 4,
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        padding: 4,
+        borderRadius: 2,
+        boxShadow: '0px 4px 10px black',
+      }}
+    >
+      <Typography variant="h4" gutterBottom align="center">
+        Add Place Details
       </Typography>
+
       <Grid container spacing={3}>
         <Grid item xs={12}>
           <TextField
@@ -52,8 +150,11 @@ const UserForm = () => {
             name="placeName"
             value={formData.placeName}
             onChange={handleChange}
+            error={!!formErrors.placeName}
+            helperText={formErrors.placeName}
           />
         </Grid>
+
         <Grid item xs={12}>
           <TextField
             required
@@ -62,9 +163,12 @@ const UserForm = () => {
             name="address"
             value={formData.address}
             onChange={handleChange}
+            error={!!formErrors.address}
+            helperText={formErrors.address}
           />
         </Grid>
-        <Grid item xs={12}>
+
+        <Grid item xs={6}>
           <TextField
             required
             fullWidth
@@ -72,9 +176,11 @@ const UserForm = () => {
             name="phone"
             value={formData.phone}
             onChange={handleChange}
+            error={!!formErrors.phone}
+            helperText={formErrors.phone}
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid item xs={6}>
           <TextField
             required
             fullWidth
@@ -82,29 +188,69 @@ const UserForm = () => {
             name="email"
             value={formData.email}
             onChange={handleChange}
+            error={!!formErrors.email}
+            helperText={formErrors.email}
           />
         </Grid>
 
-        {/* Radio Button Group for Category */}
         <Grid item xs={12}>
-          <FormControl component="fieldset">
-            <FormLabel component="legend">Category</FormLabel>
-            <RadioGroup
-              row
-              aria-label="category"
+          <FormControl fullWidth required>
+            <InputLabel>Category</InputLabel>
+            <Select
               name="category"
               value={formData.category}
               onChange={handleChange}
             >
-              <FormControlLabel value="restaurant" control={<Radio />} label="Restaurant" />
-              <FormControlLabel value="hotel" control={<Radio />} label="Hotel" />
-              <FormControlLabel value="park" control={<Radio />} label="Park" />
-              <FormControlLabel value="mall" control={<Radio />} label="Mall" />
+              <MenuItem value="Hotel">Hotel</MenuItem>
+              <MenuItem value="Restaurant">Restaurant</MenuItem>
+              <MenuItem value="Park">Park</MenuItem>
+              <MenuItem value="Mall">Mall</MenuItem>
+              <MenuItem value="Garden">Garden</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+
+        <Grid item xs={12}>
+          <FormControl component="fieldset" required>
+            <FormLabel component="legend">Capacity</FormLabel>
+            <RadioGroup
+              row
+              name="capacity"
+              value={formData.capacity}
+              onChange={handleChange}
+              sx={{ border: '1px solid #ddd', borderRadius: 1, padding: 2 }}
+            >
+              <FormControlLabel value="1to20" control={<Radio />}label="1 to 20" />
+              <FormControlLabel value="50to100" control={<Radio />} label="50 to 100" />
+              <FormControlLabel value="100to500" control={<Radio />} label="100 to 500" />
+              <FormControlLabel value="500to1000" control={<Radio />} label="500 to 1000" />
+              <FormControlLabel value="1000+" control={<Radio />} label="1000+" />
             </RadioGroup>
           </FormControl>
         </Grid>
 
         <Grid item xs={12}>
+          <TextField
+            required
+            fullWidth
+            multiline
+            rows={4}
+            label="Custom Message"
+            name="customMessage"
+            value={formData.customMessage}
+            onChange={handleChange}
+            error={!!formErrors.customMessage}
+            helperText={formErrors.customMessage}
+            inputProps={{ maxLength: 150 }}
+          />
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="h6">Select Location on Map:</Typography>
+          <MapComponent />
+        </Grid>
+            <br /><br /><br />    
+           <Grid item xs={12}>
           <Button
             variant="contained"
             component="label"
@@ -113,22 +259,24 @@ const UserForm = () => {
             Upload Photos
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg, image/png, image/webp"
               multiple
               hidden
               onChange={handlePhotoChange}
             />
           </Button>
-          <Grid container spacing={2} sx={{ mt: 2 }}>
+          {formErrors.photos && (
+            <Typography color="error">{formErrors.photos}</Typography>
+          )}
+          <Grid container spacing={2} mt={2}>
             {formData.photoPreviews.map((preview, index) => (
-              <Grid item key={index} xs={6} sm={4}>
+              <Grid item xs={4} key={index}>
                 <img
                   src={preview}
-                  alt={`Selected ${index + 1}`}
+                  alt={`Preview ${index}`}
                   style={{
-                    maxHeight: '100px',
-                    maxWidth: '100%',
-                    borderRadius: '5px',
+                    width: '100%',
+                    height: '100px',
                     objectFit: 'cover',
                   }}
                 />
@@ -136,10 +284,25 @@ const UserForm = () => {
             ))}
           </Grid>
         </Grid>
-        
+
         <Grid item xs={12}>
           <Button type="submit" variant="contained" color="primary" fullWidth>
             Submit
+          </Button>
+        </Grid>
+        {formErrors.submit && (
+          <Grid item xs={12}>
+            <Typography color="error" align="center">{formErrors.submit}</Typography>
+          </Grid>
+        )}
+
+        <Grid item xs={12}>
+          <Button
+            variant="outlined"
+            fullWidth
+            onClick={() => navigate(-1)}
+          >
+            Back
           </Button>
         </Grid>
       </Grid>
