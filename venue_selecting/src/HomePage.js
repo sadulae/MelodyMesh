@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Button, Typography, TextField, IconButton } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -21,6 +22,11 @@ const HomePage = () => {
   const handleAddPlaceClick = () => {
     // Navigate to your form page where you add a new place
     navigate('/add-place');
+  };
+
+  const handleUpdatePageClick = () => {
+    // Navigate to your form page where you add a new place
+    navigate('/update-place');
   };
 
   return (
@@ -71,7 +77,16 @@ const HomePage = () => {
           onClick={handleViewClick}
           sx={{ marginLeft: 'auto' }}
         >
-          <VisibilityIcon />
+        <VisibilityIcon />
+        </IconButton>
+        <IconButton
+          color="primary"
+          onClick={handleUpdatePageClick}
+          sx={{p : 3
+            
+          }}
+          >
+          <EditIcon/>
         </IconButton>
       </Box>
     </Box>
