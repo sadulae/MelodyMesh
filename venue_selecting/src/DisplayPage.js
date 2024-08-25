@@ -7,7 +7,7 @@ const DisplayPage = () => {
   const formData = location.state?.formData || {};
   const mapRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const API_KEY = 'AIzaSyCpg09_zEJaHr8mRJ24T0F4BWJ_ES9bUBs'; // Replace with your actual API key
+  const API_KEY = 'AIzaSyCpg09_zEJaHr8mRJ24T0F4BWJ_ES9bUBs'; // API KEY = {AIzaSyCpg09_zEJaHr8mRJ24T0F4BWJ_ES9bUBs}
 
   // Function to dynamically load the Google Maps script
   const loadGoogleMapsScript = () => {
