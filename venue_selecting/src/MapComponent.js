@@ -1,11 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 
 const MapComponent = () => {
   const mapRef = useRef(null);
   const directionsService = useRef(null);
   const directionsRenderer = useRef(null);
+  
+  const [origin, setOrigin] = useState('');
+  const [destination, setDestination] = useState('');
 
   useEffect(() => {
     if (!window.google) {
@@ -35,20 +39,22 @@ const MapComponent = () => {
     };
   }, []);
 
-  const calculateAndDisplayRoute = (origin, destination) => {
-    console.log('calculateAndDisplayRoute called with:', origin, destination);
-
+  const calculateAndDisplayRoute = () => {
     if (!window.google || !directionsService.current || !directionsRenderer.current) {
       console.error('Google Maps API or Directions Service is not initialized.');
       return;
     }
 
-    const google = window.google;
+    if (!origin || !destination) {
+      console.error('Both origin and destination must be provided.');
+      return;
+    }
+
     directionsService.current.route(
       {
         origin: origin,
         destination: destination,
-        travelMode: google.maps.TravelMode.DRIVING,
+        travelMode: window.google.maps.TravelMode.DRIVING,
       },
       (response, status) => {
         if (status === 'OK') {
@@ -67,19 +73,35 @@ const MapComponent = () => {
         sx={{
           width: '100%',
           height: '300px',
-          borderRadius: '5px',
+          borderRadius: '10px',
           border: '1px solid #ccc',
           backgroundColor: '#000',
         }}
       ></Box>
-      <Button
-        variant="contained"
-        color="primary"
-        sx={{ mt: 2 }}
-        onClick={() => calculateAndDisplayRoute('Colombo, WP', 'Kandy, CP')}
-      >
-        Get Directions
-      </Button>
+
+      <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <TextField
+          label="Start Point"
+          variant="outlined"
+          value={origin}
+          onChange={(e) => setOrigin(e.target.value)}
+          fullWidth
+        />
+        <TextField
+          label="End Point"
+          variant="outlined"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          fullWidth
+        />
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={calculateAndDisplayRoute}
+        >
+          Get Directions
+        </Button>
+      </Box>
     </Box>
   );
 };
