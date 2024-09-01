@@ -1,7 +1,7 @@
 // src/HomePage.js
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Button, Typography, TextField, IconButton } from '@mui/material';
+import { Box, Button, Typography, /*TextField,*/ IconButton } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 
@@ -10,9 +10,9 @@ const HomePage = () => {
 
   // Sample data, you can replace this with actual data later
   const placeData = {
-    placeName: 'Sample Place',
+    placeName: 'SLIIT',
     phone: '123-456-7890',
-    email: 'sample@place.com',
+    email: 'sliit@gmail.com',
   };
 
   const handleViewClick = () => {
@@ -39,7 +39,7 @@ const HomePage = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4">Home Page</Typography>
+        <Typography variant="h4">Venue Details</Typography>
         <Button
           variant="contained"
           color="primary"
@@ -59,6 +59,11 @@ const HomePage = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           backgroundColor: 'white',
+          boxShadow: '0px 4px 10px #f0f0f0',
+          '&:hover':{
+            opacity: 0.8,
+            backgroundColor: '#eee'
+          }
         }}
       >
         <Box>
