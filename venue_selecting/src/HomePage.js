@@ -39,7 +39,7 @@ const HomePage = () => {
           mb: 3,
         }}
       >
-        <Typography variant="h4">Home Page</Typography>
+        <Typography variant="h4">Venue Details</Typography>
         <Button
           variant="contained"
           color="primary"
