@@ -3,15 +3,22 @@ import { useNavigate } from 'react-router-dom';
 import { Box, Grid, Stack, Typography, TextField, MenuItem, InputLabel, Select, FormControl, Button} from '@mui/material';
 import MapComponent from './MapComponent';
 import { PhotoCamera } from '@mui/icons-material';
+import axios from 'axios';
 //import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
 
 const UserForm = () => {
 
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate('/display', { state: { formData } });
+    try {
+      const response = await axios.post('http://localhost:5000/submit', formData);
+      console.log(response.data);
+      navigate('/display', { state: { formData } });
+    } catch (error) {
+      console.error('Error submitting the form:', error);
+    }
   };
 
   const [formData, setFormData] = useState({
