@@ -5,6 +5,8 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const pageRoutes = require('./routes/pageRoutes');
 const errorHandler = require('./middleware/errorHandler');
+const adminRoutes = require('./routes/adminRoutes');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -15,6 +17,9 @@ app.use(express.json()); // for parsing application/json
 app.use('/api/auth', authRoutes);
 app.use('/api/pages', pageRoutes);
 app.use(errorHandler);
+app.use('/api/admin', adminRoutes); 
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 
 
 // Connect to MongoDB

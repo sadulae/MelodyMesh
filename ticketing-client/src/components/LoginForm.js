@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { TextField, Button, Grid, Snackbar, Alert } from '@mui/material';
+import { TextField, Button, Typography, Grid, Snackbar, Alert } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { InputAdornment, IconButton } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 const LoginForm = () => {
   const navigate = useNavigate();
@@ -13,6 +16,11 @@ const LoginForm = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [open, setOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); 
+
+  const theme = useTheme();
+  const primaryColorHex = theme.palette.primary.main;
+  console.log('Primary Color Hex:', primaryColorHex);
 
   useEffect(() => {
     setIsFormValid(email && password && !emailError && !passwordError);
@@ -25,11 +33,11 @@ const LoginForm = () => {
         email,
         password
       });
-      localStorage.setItem('token', response.data.token); // Save the token to local storage
+      localStorage.setItem('token', response.data.token);
       setMessage('Login Successful!');
       setIsError(false);
       setOpen(true);
-      setTimeout(() => navigate('/home'), 2000); // Redirect to home page after 2 seconds
+      setTimeout(() => navigate('/home'), 2000);
     } catch (error) {
       setMessage('Login Failed: ' + (error.response ? error.response.data : error.message));
       setIsError(true);
@@ -51,9 +59,7 @@ const LoginForm = () => {
     const value = event.target.value;
     setPassword(value);
     if (!validatePassword(value)) {
-      setPasswordError(
-        'Password must be 8-20 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character.'
-      );
+      setPasswordError('Password must be 8-20 characters long, include at least one uppercase letter, one lowercase letter, one number, and one special character.');
     } else {
       setPasswordError('');
     }
@@ -89,21 +95,31 @@ const LoginForm = () => {
             fullWidth
             label="Password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             value={password}
             onChange={handlePasswordChange}
             error={!!passwordError}
             helperText={passwordError}
             InputProps={{
               style: { borderRadius: '10px' },
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
             }}
           />
         </Grid>
         <Grid item xs={12} style={{ textAlign: 'right' }}>
           <Button
             color="primary"
-            style={{ textTransform: 'none' }} // Optional: remove text uppercase style if preferred
-            onClick={() => console.log('Navigate to Forgot Password page')} // Replace with actual navigation logic later
+            style={{ textTransform: 'none' }}
+            onClick={() => navigate('/forgot-password')}
           >
             Forgot Password?
           </Button>

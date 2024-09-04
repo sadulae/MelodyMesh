@@ -5,6 +5,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 import addYears from 'date-fns/addYears';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { InputAdornment, IconButton } from '@mui/material';
+
 
 const SignupForm = () => {
   const navigate = useNavigate();
@@ -22,6 +25,9 @@ const SignupForm = () => {
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [nameError, setNameError] = useState('');
+
+  const [showPassword, setShowPassword] = useState(false); 
+
   
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const validatePassword = (password) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/.test(password);
@@ -84,21 +90,30 @@ const SignupForm = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    console.log("Selected Birthday:", birthday);
     if (isFormValid && !isError) {
       try {
-        const response = await axios.post('http://localhost:5000/api/auth/signup', {
+        await axios.post('http://localhost:5000/api/auth/signup', {
           firstName,
           lastName,
           email,
           password,
-          birthday: birthday.toISOString().slice(0, 10)
+          dob: birthday ? birthday.toISOString().slice(0, 10) : '' // Format dob
         });
         setMessage('Signup Successful!');
         setIsError(false);
         setOpen(true);
         setTimeout(() => navigate('/login'), 2000);
       } catch (error) {
-        setMessage(error.response ? error.response.data : 'Signup Failed!');
+        let errorMsg = 'Signup Failed!';
+        if (error.response && error.response.data) {
+          if (typeof error.response.data === 'string') {
+            errorMsg = error.response.data;
+          } else if (error.response.data.errors) {
+            errorMsg = error.response.data.errors.map(err => err.msg).join(', ');
+          }
+        }
+        setMessage(errorMsg);
         setIsError(true);
         setOpen(true);
       }
@@ -163,21 +178,31 @@ const SignupForm = () => {
           />
         </Grid>
         <Grid item xs={12}>
-          <TextField
+        <TextField
             variant="outlined"
             required
             fullWidth
             label="Password"
             name="password"
-            type="password"
+            type={showPassword ? 'text' : 'password'} // Toggle between password and text
             value={password}
             onChange={handlePasswordChange}
             error={!!passwordError}
             helperText={passwordError}
             InputProps={{
-              style: { borderRadius: '10px' }
-            }}
-          />
+                style: { borderRadius: '10px' },
+                endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
+          {showPassword ? <VisibilityOff /> : <Visibility />}
+        </IconButton>
+      </InputAdornment>
+    ),
+  }}
+/>
         </Grid>
         <Grid item xs={12}>
           <DatePicker
