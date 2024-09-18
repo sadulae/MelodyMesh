@@ -2,14 +2,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+//import { Start } from '@mui/icons-material';
+import RoomIcon from '@mui/icons-material/Room';
+import { Grid } from '@mui/material';
 
 const MapComponent = () => {
   const mapRef = useRef(null);
-  const directionsService = useRef(null);
-  const directionsRenderer = useRef(null);
-  
-  const [origin, setOrigin] = useState('');
-  const [destination, setDestination] = useState('');
+  const markerRef = useRef(null); // Reference for the marker
+  //const searchBoxRef = useRef(null); // Reference for the search box
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [searchValue, setSearchValue] = useState('');
 
   useEffect(() => {
     if (!window.google) {
@@ -23,51 +26,92 @@ const MapComponent = () => {
       zoom: 8,
     });
 
-    directionsService.current = new google.maps.DirectionsService();
-    directionsRenderer.current = new google.maps.DirectionsRenderer();
-    directionsRenderer.current.setMap(map);
+    // Initialize search box
+    const input = document.getElementById('search-box');
+    const searchBox = new google.maps.places.SearchBox(input);
 
+    // Listen for search box place change
+    searchBox.addListener('places_changed', () => {
+      const places = searchBox.getPlaces();
+      if (places.length === 0) {
+        return;
+      }
+
+      const place = places[0];
+      if (!place.geometry || !place.geometry.location) {
+        return;
+      }
+
+      const location = place.geometry.location;
+
+      // Update latitude and longitude states
+      setLatitude(location.lat());
+      setLongitude(location.lng());
+
+      // Set marker position on searched location
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+      }
+
+      markerRef.current = new google.maps.Marker({
+        position: location,
+        map: map,
+        title: place.name,
+      });
+
+      // Center the map to the searched location
+      map.setCenter(location);
+      map.setZoom(14);
+    });
+
+    // Add click event to the map
     const onClickMap = (event) => {
       const location = event.latLng;
       console.log('New location:', location.toString());
+
+      // Check if there's already a marker, if so, remove it
+      if (markerRef.current) {
+        markerRef.current.setMap(null);
+      }
+
+      // Create a custom marker
+      markerRef.current = new google.maps.Marker({
+        position: location,
+        map: map,
+        StartIcon:RoomIcon,
+        // icon: {
+        //   url: 'https://example.com/custom-icon.png', // Replace with the URL of your custom icon
+        //   scaledSize: new google.maps.Size(40, 40), // Adjust the size of the icon
+        // },
+      });
+
+      // Update latitude and longitude states for clicked position
+      setLatitude(location.lat());
+      setLongitude(location.lng());
     };
 
     map.addListener('click', onClickMap);
 
+    // Clean up event listeners when component unmounts
     return () => {
-      google.maps.event.clearListeners(map, 'click');
+      google.maps.event.clearInstanceListeners(map, 'click');
+      google.maps.event.clearInstanceListeners(searchBox);
     };
   }, []);
 
-  const calculateAndDisplayRoute = () => {
-    if (!window.google || !directionsService.current || !directionsRenderer.current) {
-      console.error('Google Maps API or Directions Service is not initialized.');
-      return;
-    }
-
-    if (!origin || !destination) {
-      console.error('Both origin and destination must be provided.');
-      return;
-    }
-
-    directionsService.current.route(
-      {
-        origin: origin,
-        destination: destination,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (response, status) => {
-        if (status === 'OK') {
-          directionsRenderer.current.setDirections(response);
-        } else {
-          console.error('Directions request failed due to ' + status);
-        }
-      }
-    );
-  };
-
   return (
     <Box sx={{ p: 2, backgroundColor: '#f0f0f0', borderRadius: '8px' }}>
+      {/* Search Box */}
+      <TextField
+        id="search-box"
+        label="Search Location"
+        variant="outlined"
+        fullWidth
+        value={searchValue}
+        onChange={(e) => setSearchValue(e.target.value)}
+      />
+
+      {/* Map */}
       <Box
         ref={mapRef}
         sx={{
@@ -76,32 +120,45 @@ const MapComponent = () => {
           borderRadius: '10px',
           border: '1px solid #ccc',
           backgroundColor: '#000',
+          mt: 2,
         }}
       ></Box>
 
-      <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <TextField
-          label="Start Point"
-          variant="outlined"
-          value={origin}
-          onChange={(e) => setOrigin(e.target.value)}
-          fullWidth
-        />
-        <TextField
-          label="End Point"
-          variant="outlined"
-          value={destination}
-          onChange={(e) => setDestination(e.target.value)}
-          fullWidth
-        />
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={calculateAndDisplayRoute}
-        >
-          Get Directions
-        </Button>
+      {/* Display Latitude and Longitude */}
+      <Box sx={{ mt: 2,
+                color: '#000',
+                borderRadius: '8px',
+                backgroundColor: '#fff',
+                padding: '10px',
+                textAlign: 'center',
+                '&:hover': {
+                  opacity: 0.8,
+                  background: 'linear-gradient(to right, #FADCD9, #FADCD9)',
+                },
+      }}>
+        <p>Latitude {latitude}</p>
+        <p>Longitude {longitude}</p>
       </Box>
+      <Grid container spacing={2}
+            sx={{
+              mt: 2,
+              display: 'flex',
+              justifyContent: 'center',  
+            }}    >
+      <Button
+          type="submit"
+          variant="contained"
+          sx={{
+            marginRight: 2,
+            color: '#fff',
+            '&:hover': {
+              background: 'linear-gradient(to right, #FFC107, #FF9800)',
+            },
+          }}
+        >
+          ADD Location
+        </Button>
+        </Grid>
     </Box>
   );
 };
