@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, IconButton, Drawer, Box, List, ListItem, ListItemText } from '@mui/material';
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  IconButton,
+  Drawer,
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+} from '@mui/material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -11,7 +22,7 @@ const Header = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate(); // Use navigate to handle redirection
+  const navigate = useNavigate();
   const [firstName, setFirstName] = useState('');
 
   useEffect(() => {
@@ -24,10 +35,10 @@ const Header = () => {
       } catch (error) {
         console.error('Invalid token:', error);
       }
-    }else {
+    } else {
       setFirstName('');
     }
-  }, [setFirstName, location]);
+  }, [location]);
 
   const toggleDrawer = (open) => () => {
     setDrawerOpen(open);
@@ -49,7 +60,14 @@ const Header = () => {
           padding: '0 20px',
         }}
       >
-        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '70px' }}>
+        <Toolbar
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            height: '70px',
+          }}
+        >
           <Typography
             variant="h4"
             sx={{
@@ -59,7 +77,13 @@ const Header = () => {
               fontFamily: "'Poppins', sans-serif",
             }}
           >
-            <Link to="/home" style={{ textDecoration: 'none', color: theme.palette.primary.main }}>
+            <Link
+              to="/home"
+              style={{
+                textDecoration: 'none',
+                color: theme.palette.primary.main,
+              }}
+            >
               MelodyMesh
             </Link>
           </Typography>
@@ -135,7 +159,9 @@ const Header = () => {
               </Button>
             </Box>
           ) : (
-            !isMobile && location.pathname !== '/login' && location.pathname !== '/signup' && (
+            !isMobile &&
+            location.pathname !== '/login' &&
+            location.pathname !== '/signup' && (
               <Box sx={{ display: 'flex', gap: '1rem' }}>
                 <Link to="/login" style={{ textDecoration: 'none' }}>
                   <Button
@@ -288,55 +314,94 @@ const Header = () => {
                 }}
               />
             </ListItem>
-            {location.pathname !== '/login' && (
-              <ListItem
-                button
-                component={Link}
-                to="/login"
-                onClick={toggleDrawer(false)}
-                sx={{ marginBottom: '2rem', justifyContent: 'center' }}
-              >
-                <Button
-                  variant="outlined"
-                  sx={{
-                    borderColor: theme.palette.primary.main,
-                    color: theme.palette.primary.main,
-                    textTransform: 'none',
-                    fontFamily: "'Poppins', sans-serif",
-                    width: '100%',
-                    borderRadius: '20px',
-                    padding: '6px 20px',
-                    fontSize: '1rem',
-                  }}
-                >
-                  Sign In
-                </Button>
-              </ListItem>
-            )}
-            {location.pathname !== '/signup' && (
-              <ListItem
-                button
-                component={Link}
-                to="/signup"
-                onClick={toggleDrawer(false)}
-                sx={{ justifyContent: 'center' }}
-              >
-                <Button
-                  variant="outlined"
-                  sx={{
-                    borderColor: theme.palette.primary.main,
-                    color: theme.palette.primary.main,
-                    textTransform: 'none',
-                    fontFamily: "'Poppins', sans-serif",
-                    width: '100%',
-                    borderRadius: '20px',
-                    padding: '6px 20px',
-                    fontSize: '1rem',
-                  }}
-                >
-                  Sign Up
-                </Button>
-              </ListItem>
+            {firstName ? (
+              <>
+                <ListItem sx={{ marginBottom: '2rem', justifyContent: 'center' }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      color: theme.palette.primary.main,
+                      fontFamily: "'Poppins', sans-serif",
+                    }}
+                  >
+                    Welcome, {firstName}
+                  </Typography>
+                </ListItem>
+                <ListItem sx={{ justifyContent: 'center' }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      handleSignOut();
+                      toggleDrawer(false)();
+                    }}
+                    sx={{
+                      borderColor: theme.palette.primary.main,
+                      color: theme.palette.primary.main,
+                      textTransform: 'none',
+                      fontFamily: "'Poppins', sans-serif",
+                      width: '100%',
+                      borderRadius: '20px',
+                      padding: '6px 20px',
+                      fontSize: '1rem',
+                    }}
+                  >
+                    Sign Out
+                  </Button>
+                </ListItem>
+              </>
+            ) : (
+              <>
+                {location.pathname !== '/login' && (
+                  <ListItem
+                    button
+                    component={Link}
+                    to="/login"
+                    onClick={toggleDrawer(false)}
+                    sx={{ marginBottom: '2rem', justifyContent: 'center' }}
+                  >
+                    <Button
+                      variant="outlined"
+                      sx={{
+                        borderColor: theme.palette.primary.main,
+                        color: theme.palette.primary.main,
+                        textTransform: 'none',
+                        fontFamily: "'Poppins', sans-serif",
+                        width: '100%',
+                        borderRadius: '20px',
+                        padding: '6px 20px',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      Sign In
+                    </Button>
+                  </ListItem>
+                )}
+                {location.pathname !== '/signup' && (
+                  <ListItem
+                    button
+                    component={Link}
+                    to="/signup"
+                    onClick={toggleDrawer(false)}
+                    sx={{ justifyContent: 'center' }}
+                  >
+                    <Button
+                      variant="outlined"
+                      sx={{
+                        borderColor: theme.palette.primary.main,
+                        color: theme.palette.primary.main,
+                        textTransform: 'none',
+                        fontFamily: "'Poppins', sans-serif",
+                        width: '100%',
+                        borderRadius: '20px',
+                        padding: '6px 20px',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      Sign Up
+                    </Button>
+                  </ListItem>
+                )}
+              </>
             )}
           </List>
         </Box>

@@ -1,20 +1,20 @@
 const mongoose = require('mongoose');
 
-const tierSchema = new mongoose.Schema({
-  name: String,
-  price: Number,
-  benefits: String,
+const TierSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  benefits: { type: String, required: true },
+  // Add the quantity field here
+  quantity: { type: Number, required: true },
 });
 
-const eventSchema = new mongoose.Schema({
+const EventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   date: { type: Date, required: true },
   location: { type: String, required: true },
-  posterUrl: { type: String }, // Field for storing poster URL
-  tiers: [tierSchema],
+  posterUrl: { type: String, required: true },
+  tiers: [TierSchema],
 });
 
-const Event = mongoose.model('Event', eventSchema);
-
-module.exports = Event;
+module.exports = mongoose.model('Event', EventSchema);

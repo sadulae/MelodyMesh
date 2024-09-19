@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
-const authMiddleware = require('../middleware/authMiddleware');
 const { body, validationResult } = require('express-validator');
 
 // Configure Nodemailer transporter
@@ -19,11 +18,13 @@ const transporter = nodemailer.createTransport({
 
 // Sign Up
 router.post('/signup',
-  body('firstName').not().isEmpty().withMessage('First name is required'),
-  body('lastName').not().isEmpty().withMessage('Last name is required'),
-  body('email').isEmail().withMessage('Invalid email format'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
-  body('dob').not().isEmpty().withMessage('Date of birth is required'),
+  [
+    body('firstName').not().isEmpty().withMessage('First name is required'),
+    body('lastName').not().isEmpty().withMessage('Last name is required'),
+    body('email').isEmail().withMessage('Invalid email format'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+    body('dob').not().isEmpty().withMessage('Date of birth is required')
+  ],
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -44,7 +45,8 @@ router.post('/signup',
         lastName,
         email,
         password: hashedPassword,
-        dob: new Date(dob) // Ensure dob is stored as a Date object
+        dob: new Date(dob), // Ensure dob is stored as a Date object
+        isAdmin: false // default to regular user
       });
 
       await newUser.save();
@@ -69,9 +71,9 @@ router.post('/login', async (req, res) => {
       return res.status(400).send('Invalid credentials');
     }
 
-    // Include firstName in the token payload
+    // Include firstName and isAdmin in the token payload
     const token = jwt.sign(
-      { id: user._id, firstName: user.firstName },
+      { id: user._id, firstName: user.firstName, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
@@ -120,36 +122,41 @@ router.post('/forgot-password', async (req, res) => {
 });
 
 // Reset Password
-router.post('/reset-password/:token', async (req, res) => {
-  const { token } = req.params;
-  const { newPassword } = req.body;
+router.post('/reset-password/:token',
+  [
+    body('newPassword').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
+  ],
+  async (req, res) => {
+    const { token } = req.params;
+    const { newPassword } = req.body;
 
-  try {
-    const user = await User.findOne({
-      resetToken: token,
-      resetTokenExpiration: { $gt: Date.now() } // Check if the token has not expired
-    });
-
-    if (!user) {
-      return res.status(400).send('Invalid or expired token.');
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.resetToken = undefined;
-    user.resetTokenExpiration = undefined;
-    await user.save();
+    try {
+      const user = await User.findOne({
+        resetToken: token,
+        resetTokenExpiration: { $gt: Date.now() } // Check if the token has not expired
+      });
 
-    res.send('Password has been reset.');
-  } catch (error) {
-    console.error('Reset password error:', error);
-    res.status(500).send('Server error.');
+      if (!user) {
+        return res.status(400).send('Invalid or expired token.');
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      user.resetToken = undefined;
+      user.resetTokenExpiration = undefined;
+      await user.save();
+
+      res.send('Password has been reset.');
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).send('Server error.');
+    }
   }
-});
-
-// Example of a protected route
-router.get('/protected', authMiddleware, (req, res) => {
-  res.send('Protected content');
-});
+);
 
 module.exports = router;
