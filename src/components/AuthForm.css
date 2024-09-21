@@ -1,0 +1,130 @@
+/* src/components/AuthForm.css */
+
+body, html {
+    height: 100%;
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #c4bebe; /* Background color like the image */
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+.auth-form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+.auth-form {
+    background: #fff;
+    padding: 2.5rem;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    width: 100%;
+    max-width: 400px;
+}
+
+.auth-form h2 {
+    margin-bottom: 1.5rem;
+    font-size: 1.75rem;
+    color: #333;
+    text-align: center;
+}
+
+.auth-form div {
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.auth-form label {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    background-color: #f9f9f9;
+}
+
+.auth-form input:focus {
+    border-color: #667eea;
+    outline: none;
+}
+
+.auth-form button {
+    width: 100%;
+    padding: 0.75rem;
+    background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.auth-form button:hover {
+    background: linear-gradient(90deg, #38f9d7 0%, #43e97b 100%);
+}
+
+.auth-form .social-login {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.auth-form .social-login a {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #555;
+    transition: background-color 0.3s ease;
+}
+
+.auth-form .social-login a:hover {
+    background-color: #ddd;
+}
+
+.auth-form .forgot-password {
+    text-align: right;
+    margin-bottom: 1rem;
+    color: #667eea;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.auth-form .forgot-password:hover {
+    text-decoration: underline;
+}
+
+.auth-form .signup-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.auth-form .signup-link a {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.auth-form .signup-link a:hover {
+    text-decoration: underline;
+}

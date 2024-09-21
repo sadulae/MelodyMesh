@@ -1,0 +1,85 @@
+.change-bands-container {
+
+    display: flex;
+    align-items: flex-start;
+    gap: 50px; /* Adjust the gap between image and form as needed */
+    padding: -10px;
+
+    /*display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;*/
+}
+
+.image-and-table-container {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.image-container {
+    flex: 1;
+    max-width: 400px;
+    margin-right: 20px;
+}
+
+.event-image {
+    width: 100%;
+    height: auto;
+    border-radius: 20px;
+}
+
+.table-container {
+    flex: 2;
+}
+
+.bands-table {
+    width: 100%;
+    border-collapse: collapse;
+    
+}
+
+.bands-table th,
+.bands-table td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #101010;
+}
+
+.bands-table th {
+    background-color: #faf8f8;
+}
+
+.subheading {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 20px;
+}
+
+.back-button-container {
+    margin-top: 30%;
+
+}
+
+.update-button-container {
+    display: flex;
+    justify-content: flex-end; 
+    margin-top: 20px; 
+}
+
+.update-button {
+    padding: 10px 20px; 
+    background-color: #4CAF50; 
+    color: white; 
+    border: none; 
+    border-radius: 10px; 
+    cursor: pointer; 
+    font-size: 16px; 
+    font-weight: bold; 
+    transition: background-color 0.3s ease; 
+}
+
+.update-button:hover {
+    background-color: #e80303; 
+}
