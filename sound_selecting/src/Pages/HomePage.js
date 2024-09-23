@@ -10,26 +10,27 @@ import FileCopyIcon from '@mui/icons-material/FileCopyOutlined';
 import SaveIcon from '@mui/icons-material/Save';
 import PrintIcon from '@mui/icons-material/Print';
 import ShareIcon from '@mui/icons-material/Share';
-
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import SoundLightVisualRead from './SoundLightVisualRead';
 
 const images = [
   {
-    url:require('../Assets/sound.jpeg'),
+    url: require('../Assets/sound.jpeg'),
     title: 'Sound',
     width: '30%',
-    opacity: 0.5,
+    path: '/sound-form', // Define navigation path for Sound
   },
   {
     url: require('../Assets/light.jpeg'),
     title: 'Lighting',
     width: '30%',
-    opacity: 0.5,
+    path: '/lighting-form', // Define navigation path for Lighting
   },
   {
     url: require('../Assets/visual.png'),
     title: 'Visual',
     width: '30%',
-    opacity: 0.5,
+    path: '/visual-form', // Define navigation path for Visual
   },
 ];
 
@@ -98,71 +99,79 @@ const ImageMarked = styled('span')(({ theme }) => ({
 }));
 
 const actions = [
-    { icon: <FileCopyIcon />, name: 'Copy' },
-    { icon: <SaveIcon />, name: 'Save' },
-    { icon: <PrintIcon />, name: 'Print' },
-    { icon: <ShareIcon />, name: 'Share' },
-  ];
+  { icon: <FileCopyIcon />, name: 'Copy' },
+  { icon: <SaveIcon />, name: 'Save' },
+  { icon: <PrintIcon />, name: 'Print' },
+  { icon: <ShareIcon />, name: 'Share' },
+];
 
 export default function HomePage() {
+  const navigate = useNavigate(); // Declare the useNavigate hook
+
+  const handleNavigation = (path) => {
+    navigate(path); // Navigate to the specified path
+  };
+
   return (
-    <><Box
-          sx={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center', // Center horizontally
-              mt: 5, // Center vertically
-              minWidth: 300,
-              width: '100%',
-              //height: '100vh', // Optional: Makes sure the Box takes full viewport height
-          }}
+    <>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center', // Center horizontally
+          mt: 5, // Center vertically
+          minWidth: 300,
+          width: '100%',
+        }}
       >
-          {images.map((image) => (
-              <ImageButton
-                  focusRipple
-                  key={image.title}
-                  style={{
-                      width: image.width,
-                  }}
+        {images.map((image) => (
+          <ImageButton
+            focusRipple
+            key={image.title}
+            style={{
+              width: image.width,
+            }}
+            onClick={() => handleNavigation(image.path)} // Handle navigation on click
+          >
+            <ImageSrc style={{ backgroundImage: `url(${image.url})` }} />
+            <ImageBackdrop className="MuiImageBackdrop-root" />
+            <Image>
+              <Typography
+                component="span"
+                variant="subtitle1"
+                color="inherit"
+                sx={(theme) => ({
+                  position: 'relative',
+                  p: 4,
+                  pt: 2,
+                  pb: `calc(${theme.spacing(1)} + 6px)`,
+                })}
               >
-                  <ImageSrc style={{ backgroundImage: `url(${image.url})` }} />
-                  <ImageBackdrop className="MuiImageBackdrop-root" />
-                  <Image>
-                      <Typography
-                          component="span"
-                          variant="subtitle1"
-                          color="inherit"
-                          sx={(theme) => ({
-                              position: 'relative',
-                              p: 4,
-                              pt: 2,
-                              pb: `calc(${theme.spacing(1)} + 6px)`,
-                          })}
-                      >
-                          {image.title}
-                          <ImageMarked className="MuiImageMarked-root" />
-                      </Typography>
-                  </Image>
-              </ImageButton>
+                {image.title}
+                <ImageMarked className="MuiImageMarked-root" />
+              </Typography>
+            </Image>
+          </ImageButton>
+        ))}
+      </Box>
+      <Box>
+        <SoundLightVisualRead />
+      </Box>
+      <Box sx={{ height: 320, transform: 'translateZ(0px)', flexGrow: 1 }}>
+        <SpeedDial
+          ariaLabel="SpeedDial basic example"
+          sx={{ position: 'absolute', bottom: 10, right: 40, mr: 3 }}
+          icon={<SpeedDialIcon />}
+        >
+          {actions.map((action) => (
+            <SpeedDialAction
+              key={action.name}
+              icon={action.icon}
+              tooltipTitle={action.name}
+            />
           ))}
-      </Box><Box sx={{ height: 320, transform: 'translateZ(0px)', flexGrow: 1 }}>
-              <SpeedDial
-                  ariaLabel="SpeedDial basic example"
-                  sx={{ position: 'absolute', bottom: 16, right: 30 }}
-                  icon={<SpeedDialIcon />}
-              >
-                  {actions.map((action) => (
-                      <SpeedDialAction
-                          key={action.name}
-                          icon={action.icon}
-                          tooltipTitle={action.name} />
-                  ))}
-              </SpeedDial>
-          </Box></>
+        </SpeedDial>
+      </Box>
+    </>
   );
 }
-
-
-
-  
- 
