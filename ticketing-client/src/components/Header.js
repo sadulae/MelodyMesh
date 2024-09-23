@@ -128,35 +128,40 @@ const Header = () => {
 
           {!isMobile && firstName ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: theme.palette.primary.main,
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                Welcome, {firstName}
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={handleSignOut}
-                sx={{
+            <Typography
+              variant="h6"
+              onClick={() => navigate('/profile')} // Add redirect to profile page
+              sx={{
+                color: theme.palette.primary.main,
+                fontFamily: "'Poppins', sans-serif",
+                cursor: 'pointer', // Add pointer cursor for better UX
+                '&:hover': {
+                  textDecoration: 'underline',
+                },
+              }}
+            >
+              Welcome, {firstName}
+            </Typography>
+            <Button
+              variant="outlined"
+              onClick={handleSignOut}
+              sx={{
+                borderColor: theme.palette.primary.main,
+                color: theme.palette.primary.main,
+                textTransform: 'none',
+                fontFamily: "'Poppins', sans-serif",
+                borderRadius: '20px',
+                padding: '6px 20px',
+                fontSize: '1rem',
+                transition: 'box-shadow 0.3s ease-in-out',
+                '&:hover': {
+                  boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
                   borderColor: theme.palette.primary.main,
-                  color: theme.palette.primary.main,
-                  textTransform: 'none',
-                  fontFamily: "'Poppins', sans-serif",
-                  borderRadius: '20px',
-                  padding: '6px 20px',
-                  fontSize: '1rem',
-                  transition: 'box-shadow 0.3s ease-in-out',
-                  '&:hover': {
-                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
-                    borderColor: theme.palette.primary.main,
-                  },
-                }}
-              >
-                Sign Out
-              </Button>
+                },
+              }}
+            >
+              Sign Out
+            </Button>
             </Box>
           ) : (
             !isMobile &&

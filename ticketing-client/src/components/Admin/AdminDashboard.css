@@ -1,0 +1,24 @@
+/* AdminDashboard.css */
+
+.fade-enter {
+    opacity: 0;
+    transform: translateY(10px); /* Slight upward movement */
+  }
+  
+  .fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 500ms ease-in-out, transform 500ms ease-in-out; /* Longer transition and easing */
+  }
+  
+  .fade-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .fade-exit-active {
+    opacity: 0;
+    transform: translateY(10px); /* Matches the initial movement */
+    transition: opacity 500ms ease-in-out, transform 500ms ease-in-out; /* Longer transition and easing */
+  }
+  

@@ -10,6 +10,11 @@ const Home = () => {
   const [events, setEvents] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [placeholder, setPlaceholder] = useState(''); // For dynamic placeholder text
+  const [isDeleting, setIsDeleting] = useState(false); // Track deleting
+  const [loopNum, setLoopNum] = useState(0); // Keep track of typing loop
+  const [delta, setDelta] = useState(150); // Typing speed
+  const [isPaused, setIsPaused] = useState(false); // To control pauses between typing/deleting phases
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -23,33 +28,38 @@ const Home = () => {
     };
 
     fetchEvents();
+  }, []);
 
+  useEffect(() => {
     const typingText = 'Search for events...';
-    let index = 0;
-    let isDeleting = false;
 
-    const typeEffect = () => {
-      if (!isDeleting && index < typingText.length) {
-        setPlaceholder((prev) => prev + typingText[index]);
-        index++;
-        setTimeout(typeEffect, 100); // Typing speed
-      } else if (index === typingText.length && !isDeleting) {
-        setTimeout(() => {
-          isDeleting = true;
-          typeEffect();
-        }, 4000); // Wait 4 seconds before deleting
-      } else if (isDeleting && index > 0) {
-        setPlaceholder((prev) => prev.slice(0, -1));
-        index--;
-        setTimeout(typeEffect, 50); // Deleting speed
-      } else if (index === 0 && isDeleting) {
-        isDeleting = false;
-        setTimeout(typeEffect, 1000); // Wait before starting the next loop
+    const handleTyping = () => {
+      if (!isPaused) {
+        const currentText = typingText.substring(0, loopNum); // Get the current substring based on loopNum
+        setPlaceholder(currentText); // Update the placeholder text
+
+        if (!isDeleting && loopNum === typingText.length) {
+          setIsPaused(true); // Pause before starting to delete
+          setTimeout(() => {
+            setIsPaused(false);
+            setIsDeleting(true);
+          }, 2000); // Wait 2 seconds before starting to delete
+        } else if (isDeleting && loopNum === 0) {
+          setIsPaused(true); // Pause before typing again
+          setTimeout(() => {
+            setIsPaused(false);
+            setIsDeleting(false);
+          }, 500); // Short pause before starting to type again
+        } else {
+          setLoopNum((prev) => prev + (isDeleting ? -1 : 1)); // Increment or decrement loopNum
+        }
       }
     };
 
-    typeEffect();
-  }, []);
+    const ticker = setTimeout(handleTyping, delta);
+
+    return () => clearTimeout(ticker); // Clear timeout on component unmount
+  }, [loopNum, isDeleting, delta, isPaused]);
 
   const handleEventClick = (eventId) => {
     navigate(`/event/${eventId}`);

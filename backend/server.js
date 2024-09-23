@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const pageRoutes = require('./routes/pageRoutes'); // Remove if not used
+const userRoutes = require('./routes/userRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -28,6 +29,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/pages', pageRoutes); // Include only if you have pageRoutes
+app.use('/api/users', userRoutes);
 
 // Error handling middleware (should be after routes)
 app.use(errorHandler);

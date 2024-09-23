@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, Button, Typography, Grid, Snackbar, Alert } from '@mui/material';
+import React, { useState, useEffect, useContext } from 'react';
+import { TextField, Button, Grid, Snackbar, Alert } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { InputAdornment, IconButton } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+
+import { AuthContext } from '../context/AuthContext'; // Import AuthContext
 
 const LoginForm = () => {
+  const { login } = useContext(AuthContext); // Use login from AuthContext
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -16,11 +18,10 @@ const LoginForm = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [open, setOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
 
-  const theme = useTheme();
-  const primaryColorHex = theme.palette.primary.main;
-  console.log('Primary Color Hex:', primaryColorHex);
+
+  
 
   useEffect(() => {
     setIsFormValid(email && password && !emailError && !passwordError);
@@ -33,11 +34,20 @@ const LoginForm = () => {
         email,
         password
       });
-      localStorage.setItem('token', response.data.token);
+
+      console.log('Login Response:' , response.data)
+      
+
+      const { token } = response.data;
+      login(token); // Use the context login function to handle token
+
       setMessage('Login Successful!');
       setIsError(false);
       setOpen(true);
-      setTimeout(() => navigate('/home'), 2000);
+
+      setTimeout(() => {
+        navigate('/home'); // Navigate after login
+      }, 2000);
     } catch (error) {
       setMessage('Login Failed: ' + (error.response ? error.response.data : error.message));
       setIsError(true);

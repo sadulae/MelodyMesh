@@ -12,13 +12,27 @@ import {
   IconButton,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Button,
+  Slide,
 } from '@mui/material';
 import { Edit, Delete } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
+// Transition component for Dialog animation
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
 const ViewEvents = () => {
   const [events, setEvents] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState(null);
   const navigate = useNavigate();
 
   const fetchEvents = async () => {
@@ -39,17 +53,28 @@ const ViewEvents = () => {
     navigate(`/admin/events/edit/${eventId}`);
   };
 
-  const handleDelete = async (eventId) => {
-    if (window.confirm('Are you sure you want to delete this event?')) {
-      try {
-        await api.delete(`/admin/events/${eventId}`); // Use the centralized API
-        setSnackbar({ open: true, message: 'Event deleted successfully', severity: 'success' });
-        fetchEvents(); // Refresh the events list
-      } catch (error) {
-        console.error('Error deleting event:', error);
-        setSnackbar({ open: true, message: 'Failed to delete event', severity: 'error' });
-      }
+  const handleDelete = (eventId) => {
+    setSelectedEventId(eventId);
+    setOpenDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/admin/events/${selectedEventId}`); // Use the centralized API
+      setSnackbar({ open: true, message: 'Event deleted successfully', severity: 'success' });
+      fetchEvents(); // Refresh the events list
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      setSnackbar({ open: true, message: 'Failed to delete event', severity: 'error' });
+    } finally {
+      setOpenDeleteDialog(false);
+      setSelectedEventId(null);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setOpenDeleteDialog(false);
+    setSelectedEventId(null);
   };
 
   const handleSnackbarClose = () => {
@@ -88,6 +113,31 @@ const ViewEvents = () => {
           ))}
         </TableBody>
       </Table>
+
+      {/* Confirmation Dialog for Deletion */}
+      <Dialog
+        open={openDeleteDialog}
+        TransitionComponent={Transition}
+        keepMounted
+        onClose={handleCancelDelete}
+        aria-describedby="alert-dialog-slide-description"
+      >
+        <DialogTitle>{"Confirm Deletion"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-slide-description">
+            Are you sure you want to delete this event? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCancelDelete} variant="outlined" color="primary">
+            No
+          </Button>
+          <Button onClick={handleConfirmDelete} variant="contained" color="error">
+            Yes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}

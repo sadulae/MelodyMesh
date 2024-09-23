@@ -41,7 +41,9 @@ const EditEvent = () => {
   const [tiersError, setTiersError] = useState('');
   const [poster, setPoster] = useState(null);
   const [posterError, setPosterError] = useState('');
+  const [posterPreview, setPosterPreview] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
@@ -67,6 +69,8 @@ const EditEvent = () => {
             quantity: tier.quantity,
           }))
         );
+        console.log(event.posterUrl);
+        setPosterPreview(event.posterUrl); // Assuming backend provides a URL for the current poster
         setLoading(false);
       } catch (error) {
         console.error('Error fetching event details:', error);
@@ -96,7 +100,16 @@ const EditEvent = () => {
   };
 
   const handlePosterChange = (event) => {
-    setPoster(event.target.files[0]);
+    const file = event.target.files[0];
+    if (file) {
+      setPoster(file);
+      // Generate a preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPosterPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const validateForm = () => {
@@ -117,7 +130,7 @@ const EditEvent = () => {
     }
 
     if (!date) {
-      setDateError('Date is required');
+      setDateError('Date and time are required');
       valid = false;
     } else {
       setDateError('');
@@ -176,6 +189,7 @@ const EditEvent = () => {
     formData.append('tiers', JSON.stringify(tiers));
 
     try {
+      setIsSubmitting(true); // Start loading
       await api.put(`/admin/events/${eventId}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -191,9 +205,16 @@ const EditEvent = () => {
         'Error updating event:',
         error.response ? error.response.data : error.message
       );
-      setSnackbarMessage('Failed to update event');
+      // Extract error message from backend response if available
+      const errorMsg =
+        error.response && error.response.data && error.response.data.message
+          ? error.response.data.message
+          : 'Failed to update event';
+      setSnackbarMessage(errorMsg);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
+    } finally {
+      setIsSubmitting(false); // End loading
     }
   };
 
@@ -216,16 +237,16 @@ const EditEvent = () => {
 
   return (
     <Container component="main" maxWidth="md" sx={{ py: 4 }}>
-      <Typography variant="h4" color="primary" gutterBottom>
+      <Typography variant="h4" color="primary" gutterBottom align="center">
         Edit Event
       </Typography>
-      <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+      <Paper elevation={6} sx={{ p: 4, borderRadius: 4 }}>
         <form onSubmit={handleSubmit} noValidate autoComplete="off">
           {/* Event Details */}
           <Typography variant="h6" gutterBottom>
             Event Details
           </Typography>
-          <Grid container spacing={2}>
+          <Grid container spacing={3}>
             {/* Title */}
             <Grid item xs={12}>
               <TextField
@@ -238,6 +259,9 @@ const EditEvent = () => {
                 onChange={(e) => setTitle(e.target.value)}
                 error={!!titleError}
                 helperText={titleError}
+                InputProps={{
+                  sx: { borderRadius: 2 },
+                }}
               />
             </Grid>
             {/* Description */}
@@ -254,24 +278,33 @@ const EditEvent = () => {
                 onChange={(e) => setDescription(e.target.value)}
                 error={!!descriptionError}
                 helperText={descriptionError}
+                InputProps={{
+                  sx: { borderRadius: 2 },
+                }}
               />
             </Grid>
-            {/* Date */}
+            {/* Date with Time Picker */}
             <Grid item xs={12} sm={6}>
               <ReactDatePicker
                 selected={date}
                 onChange={(selectedDate) => setDate(selectedDate)}
-                dateFormat="yyyy/MM/dd"
+                dateFormat="yyyy/MM/dd h:mm aa"
                 minDate={today}
                 maxDate={maxDate}
+                showTimeSelect
+                timeFormat="HH:mm"
+                timeIntervals={15}
                 customInput={
                   <TextField
                     variant="outlined"
                     required
                     fullWidth
-                    label="Event Date"
+                    label="Event Date and Time"
                     error={!!dateError}
                     helperText={dateError}
+                    InputProps={{
+                      sx: { borderRadius: 2 },
+                    }}
                   />
                 }
               />
@@ -288,44 +321,77 @@ const EditEvent = () => {
                 onChange={(e) => setEventLocation(e.target.value)}
                 error={!!eventLocationError}
                 helperText={eventLocationError}
+                InputProps={{
+                  sx: { borderRadius: 2 },
+                }}
               />
             </Grid>
           </Grid>
 
           {/* Event Poster */}
           <Box mt={4}>
-            <Typography variant="h6" gutterBottom>
-              Event Poster
-            </Typography>
-            <Button
-              variant="outlined"
-              component="label"
-              sx={{ textTransform: 'none' }}
-            >
-              {poster ? 'Change Poster' : 'Upload Poster'}
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handlePosterChange}
-              />
-            </Button>
-            {poster && (
-              <Typography variant="body2" mt={1}>
-                Selected file: {poster.name}
-              </Typography>
-            )}
-            {!poster && (
-              <Typography variant="body2" mt={1}>
-                Current poster will be used if no new poster is uploaded.
-              </Typography>
-            )}
-            {posterError && (
-              <Typography variant="body2" color="error">
-                {posterError}
-              </Typography>
-            )}
-          </Box>
+  <Typography variant="h6" gutterBottom>
+    Event Poster
+  </Typography>
+  <Grid container spacing={2} alignItems="center">
+    <Grid item>
+      <Button
+        variant="outlined"
+        component="label"
+        sx={{ textTransform: 'none', borderRadius: 2 }}
+      >
+        {poster ? 'Change Poster' : 'Upload Poster'}
+        <input
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={handlePosterChange}
+        />
+      </Button>
+    </Grid>
+    <Grid item xs>
+      {/* If a new poster is uploaded, show its name */}
+      {poster ? (
+        <Typography variant="body2" mt={1}>
+          Selected file: {poster.name}
+        </Typography>
+      ) : (
+        // Otherwise, show a message indicating the current poster will be used
+        <Typography variant="body2" mt={1}>
+          Current poster will be used if no new one is uploaded.
+        </Typography>
+      )}
+      {posterError && (
+        <Typography variant="body2" color="error">
+          {posterError}
+        </Typography>
+      )}
+    </Grid>
+  </Grid>
+
+  {/* Show the preview and delete button only if a new poster is uploaded */}
+  {poster && (
+    <Box mt={2} display="flex" justifyContent="center" alignItems="center" flexDirection="column">
+      <img
+        src={URL.createObjectURL(poster)} // Preview the uploaded poster
+        alt="Poster Preview"
+        style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px' }}
+      />
+      <Button
+        variant="outlined"
+        color="error"
+        onClick={() => {
+          setPoster(null); // Remove the poster
+          setPosterPreview(null); // Clear the preview
+        }}
+        sx={{ mt: 2, textTransform: 'none', borderRadius: 2 }}
+      >
+        Delete Poster
+      </Button>
+    </Box>
+  )}
+</Box>
+
 
           {/* Ticket Tiers */}
           <Box mt={4}>
@@ -338,7 +404,7 @@ const EditEvent = () => {
               </Typography>
             )}
             {tiers.map((tier, index) => (
-              <Box key={index} mt={2} p={2} border={1} borderRadius={2} borderColor="grey.300">
+              <Box key={index} mt={2} p={2} border={1} borderRadius={3} borderColor="grey.300">
                 <Grid container spacing={2} alignItems="flex-end">
                   {/* Tier Name */}
                   <Grid item xs={12} sm={3}>
@@ -350,6 +416,9 @@ const EditEvent = () => {
                       placeholder="e.g., VIP"
                       value={tier.name}
                       onChange={(e) => handleTierChange(index, 'name', e.target.value)}
+                      InputProps={{
+                        sx: { borderRadius: 2 },
+                      }}
                     />
                   </Grid>
                   {/* Price */}
@@ -358,12 +427,15 @@ const EditEvent = () => {
                       variant="outlined"
                       required
                       fullWidth
-                      label="Price"
+                      label="Price ($)"
                       placeholder="e.g., 99.99"
                       type="number"
                       value={tier.price}
                       onChange={(e) => handleTierChange(index, 'price', e.target.value)}
                       inputProps={{ min: 0, step: '0.01' }}
+                      InputProps={{
+                        sx: { borderRadius: 2 },
+                      }}
                     />
                   </Grid>
                   {/* Quantity */}
@@ -378,6 +450,9 @@ const EditEvent = () => {
                       value={tier.quantity}
                       onChange={(e) => handleTierChange(index, 'quantity', e.target.value)}
                       inputProps={{ min: 1 }}
+                      InputProps={{
+                        sx: { borderRadius: 2 },
+                      }}
                     />
                   </Grid>
                   {/* Benefits */}
@@ -390,6 +465,9 @@ const EditEvent = () => {
                       placeholder="e.g., Backstage access"
                       value={tier.benefits}
                       onChange={(e) => handleTierChange(index, 'benefits', e.target.value)}
+                      InputProps={{
+                        sx: { borderRadius: 2 },
+                      }}
                     />
                   </Grid>
                   {/* Remove Button */}
@@ -410,7 +488,7 @@ const EditEvent = () => {
                 onClick={handleAddTier}
                 variant="outlined"
                 color="primary"
-                sx={{ textTransform: 'none' }}
+                sx={{ textTransform: 'none', borderRadius: 2 }}
               >
                 Add Another Tier
               </Button>
@@ -418,16 +496,35 @@ const EditEvent = () => {
           </Box>
 
           {/* Submit Button */}
-          <Box mt={4}>
+          <Box mt={4} position="relative">
             <Button
               type="submit"
               fullWidth
               variant="contained"
               color="primary"
-              sx={{ py: 1.5, fontSize: '1rem', textTransform: 'none' }}
+              disabled={isSubmitting}
+              sx={{
+                py: 1.5,
+                fontSize: '1rem',
+                textTransform: 'none',
+                borderRadius: 2,
+              }}
             >
               Update Event
             </Button>
+            {isSubmitting && (
+              <CircularProgress
+                size={24}
+                sx={{
+                  color: 'primary.main',
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  marginTop: '-12px',
+                  marginLeft: '-12px',
+                }}
+              />
+            )}
           </Box>
         </form>
       </Paper>
@@ -442,7 +539,7 @@ const EditEvent = () => {
         <Alert
           onClose={handleSnackbarClose}
           severity={snackbarSeverity}
-          sx={{ width: '100%' }}
+          sx={{ width: '100%', borderRadius: 2 }}
         >
           {snackbarMessage}
         </Alert>

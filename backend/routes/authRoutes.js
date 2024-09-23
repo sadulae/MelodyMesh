@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Configure Nodemailer transporter
 const transporter = nodemailer.createTransport({
@@ -71,12 +72,19 @@ router.post('/login', async (req, res) => {
       return res.status(400).send('Invalid credentials');
     }
 
+    // Log the user data to ensure isAdmin is available
+    console.log('User:', user);
+    
+
     // Include firstName and isAdmin in the token payload
     const token = jwt.sign(
       { id: user._id, firstName: user.firstName, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
+
     );
+
+    console.log('Generated Token:', token);
 
     res.json({ token });
   } catch (error) {
@@ -84,6 +92,7 @@ router.post('/login', async (req, res) => {
     res.status(500).send('Server error');
   }
 });
+
 
 // Forgot Password
 router.post('/forgot-password', async (req, res) => {
@@ -158,5 +167,6 @@ router.post('/reset-password/:token',
     }
   }
 );
+
 
 module.exports = router;

@@ -8,16 +8,19 @@ import Login from './pages/Login';
 import ForgotPasswordForm from './pages/ForgotPasswordForm';
 import ResetPasswordForm from './pages/ResetPasswordForm';
 import Signup from './pages/Signup';
-import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './components/Admin/AdminDashboard';
 import AddEvent from './components/Admin/AddEvent';
 import EditEvent from './components/Admin/EditEvent';
 import ViewEvents from './components/Admin/ViewEvents';
 import TicketSales from './components/Admin/TicketSales';
+import Checkout from './pages/Checkout';
+import Confirmation from './pages/Confirmation';
 import EventDetails from './components/EventDetails';
 import ProtectedRoute from './components/ProtectedRoute';
 import AuthProvider from './context/AuthContext'; // Ensure this path is correct
-import {jwtDecode} from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode'; // Corrected import
+import AdminHome from './components/Admin/AdminHome';
+import Profile from './components/Profile'; // Ensure Profile component is imported
 
 function App() {
   const [firstName, setFirstName] = useState('');
@@ -26,7 +29,7 @@ function App() {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const decodedToken = jwtDecode(token);
+        const decodedToken = jwtDecode(token); // Now correctly imported
         setFirstName(decodedToken.firstName);
       } catch (error) {
         console.error('Invalid token:', error);
@@ -40,6 +43,7 @@ function App() {
       <Router>
         <Header firstName={firstName} setFirstName={setFirstName} />
         <Routes>
+          {/* Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/home" element={<Home />} />
           <Route path="/contact" element={<Contact />} />
@@ -49,17 +53,47 @@ function App() {
           <Route path="/reset-password/:token" element={<ResetPasswordForm />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/event/:eventId" element={<EventDetails />} />
-
-          {/* Admin Routes */}
-          <Route path="/admin-login" element={<AdminLogin />} /> {/* Admin login route */}
+          
+          {/* Profile Route */}
           <Route
-            path="/admin/*"
+            path="/profile"
             element={
               <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Checkout Route */}
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Confirmation Route */}
+          <Route
+            path="/confirmation"
+            element={
+              <ProtectedRoute>
+                <Confirmation />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin Routes */}
+          <Route 
+            path="/admin/*"
+            element={
+              <ProtectedRoute adminOnly={true}> {/* Ensure adminOnly prop is passed */}
                 <AdminDashboard />
               </ProtectedRoute>
             }
           >
+            <Route index element={<AdminHome />} /> {/* Default admin route */}
             <Route path="add-event" element={<AddEvent />} />
             <Route path="events" element={<ViewEvents />} />
             <Route path="events/edit/:eventId" element={<EditEvent />} />
