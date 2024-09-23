@@ -7,6 +7,9 @@ import VisualForm from './Component/visual';
 import Displaydetails from './Component/display-details';
 import SoundLightVisualRead from './Pages/SoundLightVisualRead';
 import SoundReadCard from './Pages/SoundReadCard';
+import VisualReadCard from './Pages/VisualReadCard';
+import LightingReadCard from './Pages/LightingReadCard';
+
 
 function App() {
   return (
@@ -19,6 +22,8 @@ function App() {
         <Route path="/display-details" element={<Displaydetails />} />
         <Route path="/SLV" element={<SoundLightVisualRead />} />
         <Route path="/SoundRC" element={<SoundReadCard />} />
+        <Route path="/VisualRC" element={<VisualReadCard />} />
+        <Route path="/LightRC" element={<LightingReadCard />} />
       </Routes>
     </Router>
   );

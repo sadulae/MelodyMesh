@@ -18,6 +18,8 @@ import axios from 'axios';
 import { Carousel } from 'react-responsive-carousel';
 import PrintIcon from '@mui/icons-material/Print';
 
+
+
 const ExpandMore = styled((props) => {
   const { expand, ...other } = props;
   return <IconButton {...other} />;
@@ -120,7 +122,7 @@ export default function RecipeReviewCard() {
     try {
       const response = await axios.put(`http://localhost:5000/api/places/${editData._id}`, editData);
       if (response.status === 200) {
-        alert('Location Updated Successfully');
+        alert('Updated Successfully');
         setFormData(
           formData.map(item => item._id === editData._id ? editData : item)
         );
@@ -170,12 +172,15 @@ export default function RecipeReviewCard() {
                     Email: {data?.email || 'No Email'}
                   </Typography>
                 </CardContent>
+
                 <CardActions disableSpacing>
+
+
                   <IconButton aria-label="add to favorites">
                     <FavoriteIcon />
-
-
                   </IconButton>
+
+
                   <IconButton aria-label="share">
                     <ShareIcon />
                   </IconButton>
@@ -187,6 +192,7 @@ export default function RecipeReviewCard() {
                   >
                     <EditIcon />
                   </IconButton>
+
 
                   <IconButton 
                     aria-label="Generate Report"
@@ -213,10 +219,8 @@ export default function RecipeReviewCard() {
                       Equipment Types: {data?.equipmentTypes?.join(', ') || 'No Equipment Types'}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Rate: {data?.rate || 'No Rate'}
+                      Rate: {data?.rate || 'No Rate'}
                     </Typography>
-                      
-                      
                       <IconButton
                         variant="outlined"
                         color="error"
@@ -224,7 +228,6 @@ export default function RecipeReviewCard() {
                       >
                         <DeleteIcon />
                       </IconButton>
-
                     </Grid>
                   </CardContent>
                 </Collapse>
@@ -238,7 +241,9 @@ export default function RecipeReviewCard() {
         )}
       </Grid>
 
-      {/* Edit Dialog/Modal */}
+      {/* *********************Edit Dialog/Modal**************************** */}
+
+
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Edit Provider Details</DialogTitle>
         <DialogContent>

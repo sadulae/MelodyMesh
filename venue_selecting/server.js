@@ -43,6 +43,31 @@ app.post('/submit', async (req, res) => {
   }
 });
 
+// Route to get all data
+app.get('/submit', async (req, res) => {
+  try {
+    const forms = await Place.find(); // Fetch all data from MongoDB
+    res.status(200).send(forms);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+// Example backend route in Node.js/Express
+app.delete('/api/places/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await Place.findByIdAndDelete(id); // Replace `Place` with your actual model
+    if (result) {
+      res.status(200).send('Place deleted successfully');
+    } else {
+      res.status(404).send('Place not found');
+    }
+  } catch (error) {
+    res.status(500).send('Error deleting the place');
+  }
+});
+
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

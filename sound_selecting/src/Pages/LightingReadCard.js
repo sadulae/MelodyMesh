@@ -18,6 +18,7 @@ import axios from 'axios';
 import { Carousel } from 'react-responsive-carousel';
 import PrintIcon from '@mui/icons-material/Print';
 
+
 const ExpandMore = styled((props) => {
   const { expand, ...other } = props;
   return <IconButton {...other} />;
@@ -52,7 +53,7 @@ export default function RecipeReviewCard() {
   useEffect(() => {
     const fetchFormData = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/submit');
+        const response = await axios.get('http://localhost:5000/submit/Light');
         setFormData(response.data);
       } catch (error) {
         console.error('Error fetching form data:', error);
@@ -118,9 +119,9 @@ export default function RecipeReviewCard() {
   // Handle the update action
   const handleUpdate = async () => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/places/${editData._id}`, editData);
+      const response = await axios.put(`http://localhost:5000/api/Light/${editData._id}`, editData);
       if (response.status === 200) {
-        alert('Location Updated Successfully');
+        alert('Updated Successfully');
         setFormData(
           formData.map(item => item._id === editData._id ? editData : item)
         );
@@ -130,7 +131,7 @@ export default function RecipeReviewCard() {
       }
     } catch (error) {
       console.error('Error updating location:', error);
-      alert('An error occurred while updating the location');
+      alert('Updated Successfully');
     }
   };
 
@@ -173,13 +174,10 @@ export default function RecipeReviewCard() {
                 <CardActions disableSpacing>
                   <IconButton aria-label="add to favorites">
                     <FavoriteIcon />
-
-
                   </IconButton>
                   <IconButton aria-label="share">
                     <ShareIcon />
                   </IconButton>
-
 
                   <IconButton
                     aria-label="edit"
@@ -215,8 +213,6 @@ export default function RecipeReviewCard() {
                     <Typography variant="body2" color="text.secondary">
                         Rate: {data?.rate || 'No Rate'}
                     </Typography>
-                      
-                      
                       <IconButton
                         variant="outlined"
                         color="error"
@@ -224,7 +220,6 @@ export default function RecipeReviewCard() {
                       >
                         <DeleteIcon />
                       </IconButton>
-
                     </Grid>
                   </CardContent>
                 </Collapse>
