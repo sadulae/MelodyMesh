@@ -21,6 +21,8 @@ const MapComponent = ({ setLatitude, setLongitude }) => {
     const map = new google.maps.Map(mapRef.current, {
       center: { lat: 6.88, lng: 79.880 },
       zoom: 8,
+      streetViewControl: false,
+      mapTypeControl: false,
     });
 
     const input = document.getElementById('search-box');

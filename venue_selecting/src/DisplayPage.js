@@ -1,66 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { /*useEffect, useState*/ } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Typography, Box, Grid, Button } from '@mui/material';
+import MapView from './MapView';
 
 const DisplayPage = () => {
   const location = useLocation();
   const navigate = useNavigate(); // Add this line to use the navigate function
   const formData = location.state?.formData || {};
-  const mapRef = useRef(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const API_KEY = 'AIzaSyCpg09_zEJaHr8mRJ24T0F4BWJ_ES9bUBs'; // Your Google Maps API Key
-
-  // Function to dynamically load the Google Maps script
-  const loadGoogleMapsScript = () => {
-    return new Promise((resolve, reject) => {
-      const existingScript = document.getElementById('googleMaps');
-      if (!existingScript) {
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places`;
-        script.id = 'googleMaps';
-        script.onload = () => resolve();
-        script.onerror = (error) => reject(error);
-        document.body.appendChild(script);
-      } else {
-        resolve();
-      }
-    });
-  };
-
-  // Initialize the map once the script is loaded
-  useEffect(() => {
-    loadGoogleMapsScript()
-      .then(() => {
-        if (window.google && window.google.maps) {
-          console.log('Google Maps API loaded successfully.');
-          const map = new window.google.maps.Map(mapRef.current, {
-            center: formData.mapLocation || { lat: 6.9271, lng: 79.8612 }, // Default center if no location is provided
-            zoom: 15,
-          });
-
-          if (formData.mapLocation) {
-            new window.google.maps.Marker({
-              position: formData.mapLocation,
-              map,
-              draggable: true, // Allow users to drag the marker
-            });
-          }
-
-          setMapLoaded(true);
-        } else {
-          console.error('Google Maps API not loaded properly.');
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load Google Maps script:', error);
-      });
-  }, [formData.mapLocation]);
 
   return (
     <div
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(to bottom, black, #333)',
+        background: 'white',
         padding: '20px',
       }}
     >
@@ -69,9 +21,10 @@ const DisplayPage = () => {
           p: 3,
           maxWidth: 800,
           mx: 'auto',
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: '#f7f7f7',
           borderRadius: '10px',
-          color: 'white',
+          color: 'Black',
+          boxShadow: '8px 8px 8px 4px rgba(0,0,0,0.2)',
         }}
       >
         <Typography variant="h4" gutterBottom align="center">
@@ -101,24 +54,9 @@ const DisplayPage = () => {
               </Grid>
             )}
           </Grid>
-
-          <Grid item xs={12}>
-            <Typography variant="h6">Location on Map:</Typography>
-            {mapLoaded ? (
-              <div
-                ref={mapRef}
-                style={{
-                  width: '100%',
-                  height: '300px',
-                  borderRadius: '5px',
-                  border: '1px solid #ddd',
-                }}
-              ></div>
-            ) : (
-              <Typography>Loading map...</Typography>
-            )}
-          </Grid>
-
+          <Grid item xs={12} sm={6}>
+                  <MapView />
+                </Grid>
           <Grid item xs={12}>
             <Typography variant="h6">Address:</Typography>
             <Typography>{formData.address}</Typography>
@@ -126,7 +64,7 @@ const DisplayPage = () => {
 
           <Grid item xs={6}>
             <Typography variant="h6">Phone Number:</Typography>
-            <Typography>{formData.phone}</Typography>
+            <Typography>{formData.phoneNum}</Typography>
           </Grid>
           <Grid item xs={6}>
             <Typography variant="h6">Email Address:</Typography>
@@ -138,15 +76,6 @@ const DisplayPage = () => {
             <Typography>{formData.category}</Typography>
           </Grid>
 
-          <Grid item xs={12}>
-            <Typography variant="h6">Capacity:</Typography>
-            <Typography>{formData.capacity}</Typography>
-          </Grid>
-
-          <Grid item xs={12}>
-            <Typography variant="h6">Custom Message:</Typography>
-            <Typography>{formData.customMessage}</Typography>
-          </Grid>
         </Grid>
 
         <Box mt={4} textAlign="center">
@@ -155,7 +84,7 @@ const DisplayPage = () => {
             color="primary"
             onClick={() => navigate('/')}
           >
-            Go to Home
+            Back to Home
           </Button>
         </Box>
       </Box>
