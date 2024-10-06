@@ -1,0 +1,278 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 50;
+    padding: 50;
+    background-color: #D9D9D9;
+    background-size:cover;
+    background-repeat: no-repeat;
+    background-position: center center;
+    height: 101vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.home-container {
+    display: flex;
+    height:max-content;
+    
+}
+
+.sidebar {
+    width: 300px;
+    height:100%;
+    background-color: #101010;
+    color: #ffffff;
+    padding: 20px;
+    margin-right: 5.0%;
+    transition: transform 0.3s ease;
+}
+
+.sidebar.hidden {
+    transform: translateX(-80%);
+}
+
+.sidebar h2 {
+    color: #00ff8c;
+    margin-bottom: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-icon {
+    background: none;
+    border: none;
+    font-size: 1.0em;
+    cursor: pointer;
+    margin-left: 10px;
+    color: #00ff8c;
+}
+
+.sidebar nav ul {
+    list-style-type:none;
+    padding: 0;
+}
+
+.sidebar nav ul li {
+    padding: 30px 0;
+    border-bottom: 1px solid #ffffff;
+    cursor: pointer;
+}
+
+.sidebar nav ul li.active {
+    background-color: #1a1a1a;
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+
+    
+}
+
+.header-h1 {
+    background-color: #ffffff;
+    border-radius:10%;
+}
+
+.header .user-info {
+    display: flex;
+    align-items: center;
+    font-size: 1.2em;
+}
+
+.header .user-info span {
+    margin-right: 15px;
+}
+
+.header .user-info button {
+    background-color: #ff3b3f;
+    color: #ffffff;
+    border: #101010;
+    padding: 5px 16px;
+    cursor: pointer;
+    border-radius: 20px;
+}
+
+.event-cards {
+    display:flex;
+    justify-content:space-between ;
+    margin-top: 90px;
+    width: f
+   
+}
+
+.event-card {
+    background-color: #c4bebe;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    width: 26%;
+    text-align: center;
+}
+
+.event-card img {
+    width: 50%;
+    border-radius: 20px;
+}
+
+.event-actions {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 15px;
+}
+
+.edit-btn, .view-btn {
+    padding: 10px 20px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+.edit-btn {
+    background-color: #28a745;
+    color: #ffffff;
+}
+
+.view-btn {
+    background-color: #ff3b3f;
+    color: #ffffff;
+}
+
+/* Select Bands Form */
+.select-bands-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 100px; /* Adjust the gap between image and form as needed */
+    padding: -10px;
+}
+
+.image-container {
+    flex: 1; /* Take up as much space as needed */
+}
+
+.event-image {
+    width: 50%; /* Make the image responsive */
+    max-width: 400px; /* Control the max-width of the image */
+    height: auto;
+    border-radius: 20px; /* Optional: adds rounded corners */
+}
+
+.form-container {
+    flex: 1; /* Make the form take up more space */
+    display: flex;
+    flex-direction: column;
+    background-color: #c4bebe;
+    padding: 20px;
+    border-radius: 10px;
+    margin-right: 10%;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+select,
+input[type="time"] {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.button-group {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: white;
+    background-color: #4CAF50;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button[type="button"] {
+    background-color: #45a049;
+}
+
+button[type="button"]:hover,
+button[type="submit"]:hover {
+    background-color: #d01f1f;
+}
+
+nav {
+    display: flex;
+    gap: 15px;
+}
+
+nav a {
+    text-decoration: none;
+    color: black;
+    font-weight: bold;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+nav a:hover {
+    background-color: #ccc;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.user-info p {
+    margin: 0;
+}
+
+.sign-out {
+    background-color: #d9534f;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.sign-out:hover {
+    background-color: #c9302c;
+}
+
+.u1 {
+    color: #050505;
+}
+
+.event-details {
+    margin-top: 10px;
+  }
+  
+  .event-details h3 {
+    margin: 0;
+    font-size: 1.2rem;
+  }
+  
+  .event-details p {
+    margin: 5px 0;
+  }
