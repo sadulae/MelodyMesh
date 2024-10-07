@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { styled } from '@mui/material/styles';
-import {Card, Grid, Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle} from '@mui/material';
+import { Card, Grid, Button, TextField, Dialog, DialogActions, DialogContent, DialogTitle, Box } from '@mui/material';
 import CardHeader from '@mui/material/CardHeader';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
@@ -14,9 +14,11 @@ import ShareIcon from '@mui/icons-material/Share';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
+import PrintIcon from '@mui/icons-material/Print';
 import axios from 'axios';
 import { Carousel } from 'react-responsive-carousel';
-import PrintIcon from '@mui/icons-material/Print';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const ExpandMore = styled((props) => {
   const { expand, ...other } = props;
@@ -99,16 +101,37 @@ export default function RecipeReviewCard() {
 
   const handleGenerateReport = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/generate-report', {
-        responseType: 'blob', // Important for downloading files
-      });
+      // Create a new jsPDF instance
+      const doc = new jsPDF();
+
+      // Add title to the report
+      doc.text('Sound Providers Report', 14, 22);
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'sound_providers_report.csv'); // Set the file name
-      document.body.appendChild(link);
-      link.click();
+      // Define the table columns and rows
+      const tableColumn = ["Provider Name", "Phone Number", "Email", "Equipment Types", "Rate"];
+      const tableRows = [];
+
+      // Loop through the formData to populate the table rows
+      formData.forEach(provider => {
+        const providerData = [
+          provider.providerName || "N/A",
+          provider.phoneNumber || "N/A",
+          provider.email || "N/A",
+          provider.equipmentTypes?.join(', ') || "N/A",
+          provider.rate || "N/A"
+        ];
+        tableRows.push(providerData);
+      });
+
+      // Auto-table plugin to generate the table
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 30,
+      });
+
+      // Save the PDF
+      doc.save('sound_providers_report.pdf');
     } catch (error) {
       console.error('Error generating report:', error);
       alert('Failed to generate report');
@@ -120,7 +143,7 @@ export default function RecipeReviewCard() {
     try {
       const response = await axios.put(`http://localhost:5000/api/places/${editData._id}`, editData);
       if (response.status === 200) {
-        alert('Location Updated Successfully');
+        alert('Updated Successfully');
         setFormData(
           formData.map(item => item._id === editData._id ? editData : item)
         );
@@ -160,26 +183,31 @@ export default function RecipeReviewCard() {
                 >
                 </Carousel>
                 <CardContent>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" fontWeight={'bold'}>
                     {data?.providerName || 'No provider name'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" fontWeight={'bold'}>
                     Phone: {data?.phoneNumber || 'No Phone Number'}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" color="text.secondary" fontWeight={'bold'}>
                     Email: {data?.email || 'No Email'}
                   </Typography>
+                  <Typography variant="body2" color="text.secondary" fontWeight={'bold'}>
+                    Equipment Types: {data?.equipmentTypes?.join(', ') || 'No Equipment Types'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" fontWeight={'bold'}>
+                    Rate: {data?.rate || 'No Rate'}
+                  </Typography>
                 </CardContent>
+
                 <CardActions disableSpacing>
                   <IconButton aria-label="add to favorites">
                     <FavoriteIcon />
-
-
                   </IconButton>
+
                   <IconButton aria-label="share">
                     <ShareIcon />
                   </IconButton>
-
 
                   <IconButton
                     aria-label="edit"
@@ -207,16 +235,15 @@ export default function RecipeReviewCard() {
                 <Collapse in={expanded === index} timeout="auto" unmountOnExit>
                   <CardContent>
                     <Typography paragraph>More Details:</Typography>
-                    <Typography paragraph>{data?.additionalDetails || 'No additional details available.'}</Typography>
                     <Grid sx={{ display: 'flex', justifyContent: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Equipment Types: {data?.equipmentTypes?.join(', ') || 'No Equipment Types'}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                      <Box>
+                        <Typography variant="body2" color="text.secondary">
+                          Equipment Types: {data?.equipmentTypes?.join(', ') || 'No Equipment Types'}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary">
                         Rate: {data?.rate || 'No Rate'}
-                    </Typography>
-                      
-                      
+                      </Typography>
                       <IconButton
                         variant="outlined"
                         color="error"
@@ -224,7 +251,6 @@ export default function RecipeReviewCard() {
                       >
                         <DeleteIcon />
                       </IconButton>
-
                     </Grid>
                   </CardContent>
                 </Collapse>
@@ -238,7 +264,8 @@ export default function RecipeReviewCard() {
         )}
       </Grid>
 
-      {/* Edit Dialog/Modal */}
+      {/* *********************Edit Dialog/Modal**************************** */}
+
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Edit Provider Details</DialogTitle>
         <DialogContent>
@@ -248,7 +275,6 @@ export default function RecipeReviewCard() {
             value={editData?.providerName || ''}
             onChange={handleInputChange}
             fullWidth
-            margin="normal"
           />
           <TextField
             label="Phone Number"
@@ -256,7 +282,6 @@ export default function RecipeReviewCard() {
             value={editData?.phoneNumber || ''}
             onChange={handleInputChange}
             fullWidth
-            margin="normal"
           />
           <TextField
             label="Email"
@@ -264,7 +289,6 @@ export default function RecipeReviewCard() {
             value={editData?.email || ''}
             onChange={handleInputChange}
             fullWidth
-            margin="normal"
           />
           <TextField
             label="Rate"
@@ -272,17 +296,11 @@ export default function RecipeReviewCard() {
             value={editData?.rate || ''}
             onChange={handleInputChange}
             fullWidth
-            margin="normal"
           />
-          {/* Add more fields as needed */}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)} color="secondary">
-            Cancel
-          </Button>
-          <Button onClick={handleUpdate} color="primary">
-            Update
-          </Button>          
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={handleUpdate}>Update</Button>
         </DialogActions>
       </Dialog>
     </>

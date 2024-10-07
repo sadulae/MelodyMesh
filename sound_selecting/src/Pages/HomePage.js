@@ -114,6 +114,20 @@ export default function HomePage() {
 
   return (
     <>
+    <Box>
+          <Typography variant="h4" align="center" p={5} fontWeight={"bold"}
+           sx={{
+            color: '#333',
+            backgroundColor: '#eee',
+            borderRadius: 2,
+            mt: 5,
+            ml: 5,
+            mr: 5,
+          }}
+          >
+            Welcome to the  Sound Lighting and Visual Providers Details Page
+          </Typography>
+        </Box>
       <Box
         sx={{
           display: 'flex',
