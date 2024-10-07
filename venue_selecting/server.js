@@ -25,6 +25,9 @@ const placeSchema = new mongoose.Schema({
   phoneNum: String,
   email: String,
   category: String,
+  photos: String,
+  latitude: Number,
+  longitude: Number,
 });
 
 const Place = mongoose.model('Place', placeSchema);

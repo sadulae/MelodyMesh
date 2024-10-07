@@ -9,6 +9,15 @@ const adminRoutes = require('./routes/adminRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const pageRoutes = require('./routes/pageRoutes'); // Remove if not used
 const userRoutes = require('./routes/userRoutes');
+const organizerEvents = require('./routes/organizerEvents');
+const bandsPerformersRoutes = require('./routes/bandsPerformers');
+const newLocationRoutes = require('./routes/NewLocationRoutes'); 
+const soundLightingRoutes = require('./routes/soundLightingRoutes');
+const volunteersRoutes = require('./routes/volunteers');
+const organizersRoutes = require('./routes/organizers');
+const sponsorRoutes = require('./routes/sponsors');
+const feedbackRoutes = require('./routes/feedbackRoutes');
+const feedbackUserRoutes = require('./routes/feedbackUserRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -30,6 +39,17 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/pages', pageRoutes); // Include only if you have pageRoutes
 app.use('/api/users', userRoutes);
+app.use('/api/feedback-user', feedbackUserRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api', feedbackRoutes);
+app.use('/api/admin', organizerEvents);
+app.use('/api/admin', bandsPerformersRoutes);
+app.use('/api/admin/new-locations', newLocationRoutes); // Register new location route
+app.use('/api/admin/sound-lighting', soundLightingRoutes);
+app.use('/api/admin/volunteers', volunteersRoutes);
+app.use('/api/admin/organizers', organizersRoutes);
+app.use('/api/admin/sponsors', sponsorRoutes);
+
 
 // Error handling middleware (should be after routes)
 app.use(errorHandler);

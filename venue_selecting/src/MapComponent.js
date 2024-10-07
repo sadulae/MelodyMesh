@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 //import { Start } from '@mui/icons-material';
 import RoomIcon from '@mui/icons-material/Room';
-import { Grid } from '@mui/material';
+
 
 const MapComponent = () => {
   const mapRef = useRef(null);
@@ -22,7 +21,7 @@ const MapComponent = () => {
 
     const google = window.google;
     const map = new google.maps.Map(mapRef.current, {
-      center: { lat: -34.397, lng: 150.644 },
+      center: { lat: 6.88, lng: 79.880 },
       zoom: 8,
     });
 
@@ -100,7 +99,7 @@ const MapComponent = () => {
   }, []);
 
   return (
-    <Box sx={{ p: 2, backgroundColor: '#f0f0f0', borderRadius: '8px' }}>
+    <Box sx={{ p: 2, backgroundColor: '#f0f0f0', borderRadius: '8px', mr: 5 }}>
       {/* Search Box */}
       <TextField
         id="search-box"
@@ -139,26 +138,6 @@ const MapComponent = () => {
         <p>Latitude {latitude}</p>
         <p>Longitude {longitude}</p>
       </Box>
-      <Grid container spacing={2}
-            sx={{
-              mt: 2,
-              display: 'flex',
-              justifyContent: 'center',  
-            }}    >
-      <Button
-          type="submit"
-          variant="contained"
-          sx={{
-            marginRight: 2,
-            color: '#fff',
-            '&:hover': {
-              background: 'linear-gradient(to right, #FFC107, #FF9800)',
-            },
-          }}
-        >
-          ADD Location
-        </Button>
-        </Grid>
     </Box>
   );
 };

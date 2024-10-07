@@ -1,19 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  TextField,
-  Modal,
-  Box,
-  Typography,
-  IconButton,
-  Grid
-} from '@mui/material';
+import {Table,TableBody,TableCell,TableContainer,TableHead,TableRow,Button,TextField,Modal,Box,Typography,IconButton,Grid} from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 
 const EditableTable = () => {

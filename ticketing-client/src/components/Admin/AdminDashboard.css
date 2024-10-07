@@ -1,24 +1,58 @@
-/* AdminDashboard.css */
+/* Define CSS variables for easy customization */
+:root {
+  --transition-duration: 300ms;
+  --transition-easing: cubic-bezier(0.4, 0.0, 0.2, 1); /* Standard smooth easing */
+  --box-shadow-active: 0 4px 20px rgba(0, 0, 0, 0.1);  /* Enhanced shadow for depth */
+  --box-shadow-inactive: none;
+  --initial-opacity: 0;
+  --final-opacity: 1;
+  --initial-transform: translateY(10px) scale(0.95);
+  --final-transform: translateY(0) scale(1);
+}
 
+/* Initial state before the element enters */
 .fade-enter {
-    opacity: 0;
-    transform: translateY(10px); /* Slight upward movement */
-  }
-  
-  .fade-enter-active {
-    opacity: 1;
-    transform: translateY(0);
-    transition: opacity 500ms ease-in-out, transform 500ms ease-in-out; /* Longer transition and easing */
-  }
-  
-  .fade-exit {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  
-  .fade-exit-active {
-    opacity: 0;
-    transform: translateY(10px); /* Matches the initial movement */
-    transition: opacity 500ms ease-in-out, transform 500ms ease-in-out; /* Longer transition and easing */
-  }
-  
+  opacity: var(--initial-opacity);
+  transform: var(--initial-transform);
+}
+
+/* Active state during the enter transition */
+.fade-enter-active {
+  opacity: var(--final-opacity);
+  transform: var(--final-transform);
+  transition:
+      opacity var(--transition-duration) var(--transition-easing),
+      transform var(--transition-duration) var(--transition-easing),
+      box-shadow var(--transition-duration) var(--transition-easing);
+  box-shadow: var(--box-shadow-active);
+  will-change: opacity, transform, box-shadow;
+}
+
+/* Final state after the element has entered */
+.fade-enter-done {
+  box-shadow: var(--box-shadow-inactive);
+}
+
+/* Initial state before the element exits */
+.fade-exit {
+  opacity: var(--final-opacity);
+  transform: var(--final-transform);
+}
+
+/* Active state during the exit transition */
+.fade-exit-active {
+  opacity: var(--initial-opacity);
+  transform: var(--initial-transform);
+  transition:
+      opacity var(--transition-duration) var(--transition-easing),
+      transform var(--transition-duration) var(--transition-easing),
+      box-shadow var(--transition-duration) var(--transition-easing);
+  box-shadow: var(--box-shadow-active);
+  will-change: opacity, transform, box-shadow;
+}
+
+/* Apply the shadow during transitions for depth */
+.fade-enter-active,
+.fade-exit-active {
+  box-shadow: var(--box-shadow-active);
+}

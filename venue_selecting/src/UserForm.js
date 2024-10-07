@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Grid, Stack, Typography, TextField, MenuItem, InputLabel, Select, FormControl, Button} from '@mui/material';
+import { Box, Grid, Stack, Typography, TextField, MenuItem, InputLabel, Select, FormControl, Button } from '@mui/material';
 import MapComponent from './MapComponent';
 import { PhotoCamera } from '@mui/icons-material';
 import axios from 'axios';
-//import ArrowBackIosIcon from '@mui/icons-material/ArrowBackIos';
+
 
 const UserForm = () => {
 
@@ -22,14 +22,15 @@ const UserForm = () => {
   };
 
   const [formData, setFormData] = useState({
-    placeName: '', 
-    address: '',  
+    placeName: '',
+    address: '',
     phoneNum: '',
     email: '',
     category: '',
     photos: [],
     photoPreviews: [],
-    mapLocation: null,
+    latitude: '',
+    longitude: '',
   });
 
   const handleChange = (e) => {
@@ -59,12 +60,14 @@ const UserForm = () => {
       category: '',
       photos: [],
       photoPreviews: [],
-      mapLocation: null,
+      latitude: '',
+      longitude: '',
     });
   };
 
   return (
-    <Box sx={{ mt: 5, mr: 5, ml: 5, mb: 5 }}
+    <Box
+      sx={{ mt: 5, mr: 5, ml: 5, mb: 5 }}
       component="form"
       onSubmit={handleSubmit}
     >
@@ -81,6 +84,7 @@ const UserForm = () => {
                 backgroundColor: '#FADCD9',
                 padding: 2,
                 borderRadius: 2,
+                mr: 5,
               }}
             >
               Add Place Details

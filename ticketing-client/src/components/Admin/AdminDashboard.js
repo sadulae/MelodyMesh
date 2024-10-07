@@ -19,7 +19,14 @@ const AdminDashboard = () => {
           height: '100vh',
         }}
       >
-        <Typography variant="h6" sx={{ p: 2, borderBottom: 1, borderColor: 'divider', fontWeight: 'bold' }}>
+        {/* Link to redirect to Admin Dashboard */}
+        <Typography
+          variant="h6"
+          sx={{ p: 2, borderBottom: 1, borderColor: 'divider', fontWeight: 'bold' }}
+          component={Link} // Use Link to redirect
+          to="/admin" // Redirect to /admin on click
+          style={{ textDecoration: 'none', color: 'inherit' }} // Keep default styling
+        >
           Admin Dashboard
         </Typography>
         <List component="nav" sx={{ mt: 2 }}>
@@ -44,6 +51,85 @@ const AdminDashboard = () => {
             }}
           >
             <ListItemText primary="Manage Events" sx={{ fontWeight: location.pathname.includes('events') ? 'bold' : 'normal' }} />
+          </ListItem>
+
+          {/* New Tabs */}
+          <ListItem
+            button
+            component={Link}
+            to="band-performers"
+            sx={{
+              backgroundColor: location.pathname.includes('band-performers') ? 'primary.light' : 'inherit',
+              '&:hover': { backgroundColor: 'primary.light' },
+            }}
+          >
+            <ListItemText primary="Band & Performers" sx={{ fontWeight: location.pathname.includes('band-performers') ? 'bold' : 'normal' }} />
+          </ListItem>
+          <ListItem
+            button
+            component={Link}
+            to="location"
+            sx={{
+              backgroundColor: location.pathname.includes('location') ? 'primary.light' : 'inherit',
+              '&:hover': { backgroundColor: 'primary.light' },
+            }}
+          >
+            <ListItemText primary="Location" sx={{ fontWeight: location.pathname.includes('location') ? 'bold' : 'normal' }} />
+          </ListItem>
+          <ListItem
+            button
+            component={Link}
+            to="sound-lighting"
+            sx={{
+              backgroundColor: location.pathname.includes('sound-lighting') ? 'primary.light' : 'inherit',
+              '&:hover': { backgroundColor: 'primary.light' },
+            }}
+          >
+            <ListItemText primary="Sound & Lighting" sx={{ fontWeight: location.pathname.includes('sound-lighting') ? 'bold' : 'normal' }} />
+          </ListItem>
+          <ListItem
+            button
+            component={Link}
+            to="volunteers"
+            sx={{
+              backgroundColor: location.pathname.includes('volunteers') ? 'primary.light' : 'inherit',
+              '&:hover': { backgroundColor: 'primary.light' },
+            }}
+          >
+            <ListItemText primary="Volunteer Handling" sx={{ fontWeight: location.pathname.includes('volunteers') ? 'bold' : 'normal' }} />
+          </ListItem>
+          <ListItem
+            button
+            component={Link}
+            to="organizers"
+            sx={{
+              backgroundColor: location.pathname.includes('organizers') ? 'primary.light' : 'inherit',
+              '&:hover': { backgroundColor: 'primary.light' },
+            }}
+          >
+            <ListItemText primary="Organizer Handling" sx={{ fontWeight: location.pathname.includes('organizers') ? 'bold' : 'normal' }} />
+          </ListItem>
+          <ListItem
+            button
+            component={Link}
+            to="sponsors"
+            sx={{
+              backgroundColor: location.pathname.includes('sponsors') ? 'primary.light' : 'inherit',
+              '&:hover': { backgroundColor: 'primary.light' },
+            }}
+          >
+            <ListItemText primary="Sponsor Handling" sx={{ fontWeight: location.pathname.includes('sponsors') ? 'bold' : 'normal' }} />
+          </ListItem>
+          <ListItem
+            button
+            component={Link}
+            to="feedback"
+            sx={{
+              backgroundColor: location.pathname.includes('feedback') ? 'primary.light' : 'inherit',
+              '&:hover': { backgroundColor: 'primary.light' },
+            }}
+          >
+            <ListItemText primary="Feedback" sx={{ fontWeight: location.pathname.includes('feedback') ? 'bold' : 'normal' }} />
           </ListItem>
         </List>
       </Box>

@@ -4,7 +4,6 @@ const TierSchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, required: true },
   benefits: { type: String, required: true },
-  // Add the quantity field here
   quantity: { type: Number, required: true },
 });
 
