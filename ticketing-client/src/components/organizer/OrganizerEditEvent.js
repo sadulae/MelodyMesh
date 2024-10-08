@@ -17,21 +17,28 @@ import {
 } from '@mui/material';
 
 const OrganizerEditEvent = () => {
-  const { eventId } = useParams(); // Get eventId from the URL
+  const { eventId } = useParams();
   const navigate = useNavigate();
 
   const [eventName, setEventName] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [eventTime, setEventTime] = useState('');
   const [status, setStatus] = useState('');
-  const [loading, setLoading] = useState(true); // To handle loading state
-  const [error, setError] = useState(null); // To handle error state
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Validation states
+  const [eventNameError, setEventNameError] = useState('');
+  const [eventDateError, setEventDateError] = useState('');
+  const [eventTimeError, setEventTimeError] = useState('');
+  const [statusError, setStatusError] = useState('');
+
+  const eventNameRegex = /^[A-Za-z0-9,\-\s]*$/; // Regex for allowed characters in event name
 
   useEffect(() => {
-    // Fetch event details using the eventId
     const fetchEventDetails = async () => {
       try {
-        const token = localStorage.getItem('token'); // Get token for authorization
+        const token = localStorage.getItem('token');
         const response = await axios.get(
           `http://localhost:5000/api/admin/organizer-events/${eventId}`,
           {
@@ -42,7 +49,7 @@ const OrganizerEditEvent = () => {
         );
         const event = response.data;
         setEventName(event.eventName);
-        setEventDate(new Date(event.eventDate).toISOString().split('T')[0]); // Format date for input
+        setEventDate(new Date(event.eventDate).toISOString().split('T')[0]);
         setEventTime(event.eventTime);
         setStatus(event.status);
         setLoading(false);
@@ -56,12 +63,72 @@ const OrganizerEditEvent = () => {
     fetchEventDetails();
   }, [eventId]);
 
+  // Validate event name
+  const validateEventName = (name) => {
+    if (!name) {
+      setEventNameError('Event name is required');
+      return false;
+    } else if (!eventNameRegex.test(name)) {
+      setEventNameError(
+        'Event name can only contain letters, numbers, commas, dashes, and spaces'
+      );
+      return false;
+    } else {
+      setEventNameError('');
+      return true;
+    }
+  };
+
+  // Validate event date
+  const validateEventDate = (date) => {
+    if (!date) {
+      setEventDateError('Event date is required');
+      return false;
+    }
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate < today) {
+      setEventDateError('Event date cannot be in the past');
+      return false;
+    } else {
+      setEventDateError('');
+      return true;
+    }
+  };
+
+  // Validate event time
+  const validateEventTime = (time) => {
+    if (!time) {
+      setEventTimeError('Event time is required');
+      return false;
+    } else {
+      setEventTimeError('');
+      return true;
+    }
+  };
+
+  // Validate status
+  const validateStatus = (value) => {
+    if (!value) {
+      setStatusError('Status is required');
+      return false;
+    } else {
+      setStatusError('');
+      return true;
+    }
+  };
+
+  // Handle form submission with all validations
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic client-side validation
-    if (!eventName || !eventDate || !eventTime || !status) {
-      setError('Please fill in all required fields.');
+    const isNameValid = validateEventName(eventName);
+    const isDateValid = validateEventDate(eventDate);
+    const isTimeValid = validateEventTime(eventTime);
+    const isStatusValid = validateStatus(status);
+
+    if (!isNameValid || !isDateValid || !isTimeValid || !isStatusValid) {
       return;
     }
 
@@ -73,7 +140,7 @@ const OrganizerEditEvent = () => {
     };
 
     try {
-      const token = localStorage.getItem('token'); // Get token for authorization
+      const token = localStorage.getItem('token');
       await axios.put(
         `http://localhost:5000/api/admin/organizer-events/${eventId}`,
         updatedEvent,
@@ -85,13 +152,14 @@ const OrganizerEditEvent = () => {
         }
       );
       alert('Event updated successfully!');
-      navigate('/admin/organizer-manage-events'); // Redirect after successful update
+      navigate('/admin/organizer-manage-events');
     } catch (error) {
       console.error('Error updating event:', error);
       setError('Failed to update event.');
     }
   };
 
+  // Handle loading state
   if (loading) {
     return (
       <Grid
@@ -133,6 +201,9 @@ const OrganizerEditEvent = () => {
               fullWidth
               value={eventName}
               onChange={(e) => setEventName(e.target.value)}
+              onBlur={() => validateEventName(eventName)}
+              error={!!eventNameError}
+              helperText={eventNameError}
               required
             />
           </Grid>
@@ -146,9 +217,12 @@ const OrganizerEditEvent = () => {
               fullWidth
               value={eventDate}
               onChange={(e) => setEventDate(e.target.value)}
+              onBlur={() => validateEventDate(eventDate)}
               InputLabelProps={{
                 shrink: true,
               }}
+              error={!!eventDateError}
+              helperText={eventDateError}
               required
             />
           </Grid>
@@ -162,22 +236,26 @@ const OrganizerEditEvent = () => {
               fullWidth
               value={eventTime}
               onChange={(e) => setEventTime(e.target.value)}
+              onBlur={() => validateEventTime(eventTime)}
               InputLabelProps={{
                 shrink: true,
               }}
+              error={!!eventTimeError}
+              helperText={eventTimeError}
               required
             />
           </Grid>
 
           {/* Status */}
           <Grid item xs={12}>
-            <FormControl variant="outlined" fullWidth required>
+            <FormControl variant="outlined" fullWidth required error={!!statusError}>
               <InputLabel id="status-label">Status</InputLabel>
               <Select
                 labelId="status-label"
                 label="Status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
+                onBlur={() => validateStatus(status)}
               >
                 <MenuItem value="">
                   <em>None</em>
@@ -186,7 +264,7 @@ const OrganizerEditEvent = () => {
                 <MenuItem value="ongoing">Ongoing</MenuItem>
                 <MenuItem value="completed">Completed</MenuItem>
               </Select>
-              <FormHelperText>Select the current status of the event</FormHelperText>
+              <FormHelperText>{statusError || 'Select the current status of the event'}</FormHelperText>
             </FormControl>
           </Grid>
 

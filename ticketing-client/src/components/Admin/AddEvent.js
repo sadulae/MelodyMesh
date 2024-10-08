@@ -72,6 +72,13 @@ const AdminPage = () => {
   const today = new Date();
   const maxDate = addYears(today, 5);
 
+  // Regular Expressions for Validations
+  const titlePattern = /^[A-Za-z0-9- ]*$/;
+  const descriptionPattern = /^[A-Za-z0-9- ]*$/;
+  const locationPattern = /^[A-Za-z0-9 ,.-]*$/;
+  const tierNamePattern = /^[A-Za-z0-9- ]*$/;
+  const benefitsPattern = /^[A-Za-z0-9- ]*$/;
+
   // Add a new ticket tier
   const handleAddTier = () => {
     setTiers([...tiers, { name: '', price: '', benefits: '', quantity: '' }]);
@@ -84,10 +91,32 @@ const AdminPage = () => {
     setTiers(newTiers);
   };
 
-  // Handle changes in the ticket tier fields
+  // Handle changes in the ticket tier fields with input restrictions
   const handleTierChange = (index, field, value) => {
     const newTiers = [...tiers];
-    newTiers[index][field] = value;
+    let updatedValue = value;
+
+    // Apply input restrictions based on the field
+    switch (field) {
+      case 'name':
+        if (!tierNamePattern.test(updatedValue)) return; // Prevent invalid characters
+        break;
+      case 'benefits':
+        if (!benefitsPattern.test(updatedValue)) return;
+        break;
+      case 'price':
+        // Allow only numbers and a single decimal point
+        if (!/^\d*\.?\d*$/.test(updatedValue)) return;
+        break;
+      case 'quantity':
+        // Allow only integers
+        if (!/^\d*$/.test(updatedValue)) return;
+        break;
+      default:
+        break;
+    }
+
+    newTiers[index][field] = updatedValue;
     setTiers(newTiers);
   };
 
@@ -109,34 +138,51 @@ const AdminPage = () => {
   const validateForm = () => {
     let valid = true;
 
+    // Title Validation
     if (!title.trim()) {
       setTitleError('Title is required');
+      valid = false;
+    } else if (!titlePattern.test(title.trim())) {
+      setTitleError('Title can only contain letters, numbers, spaces, and hyphens');
       valid = false;
     } else {
       setTitleError('');
     }
 
+    // Description Validation
     if (!description.trim()) {
       setDescriptionError('Description is required');
+      valid = false;
+    } else if (!descriptionPattern.test(description.trim())) {
+      setDescriptionError('Description can only contain letters, numbers, spaces, and hyphens');
       valid = false;
     } else {
       setDescriptionError('');
     }
 
+    // Date Validation
     if (!date) {
       setDateError('Date and time are required');
+      valid = false;
+    } else if (date < today) {
+      setDateError('Date and time cannot be in the past');
       valid = false;
     } else {
       setDateError('');
     }
 
+    // Location Validation
     if (!location.trim()) {
       setLocationError('Location is required');
+      valid = false;
+    } else if (!locationPattern.test(location.trim())) {
+      setLocationError('Location can only contain letters, numbers, spaces, commas, periods, and hyphens');
       valid = false;
     } else {
       setLocationError('');
     }
 
+    // Poster Validation
     if (!poster) {
       setPosterError('Poster is required');
       valid = false;
@@ -144,26 +190,50 @@ const AdminPage = () => {
       setPosterError('');
     }
 
-    // Tiers validation
+    // Tiers Validation
     if (tiers.length === 0) {
       setTiersError('At least one tier is required');
       valid = false;
     } else {
-      const tiersValid = tiers.every((tier) => {
-        return (
-          tier.name.trim() &&
-          tier.price.toString().trim() &&
-          tier.benefits.trim() &&
-          tier.quantity.toString().trim() &&
-          parseInt(tier.quantity) > 0
-        );
-      });
+      let tierValid = true;
+      for (let i = 0; i < tiers.length; i++) {
+        const tier = tiers[i];
+        if (
+          !tier.name.trim() ||
+          !tier.price.toString().trim() ||
+          !tier.benefits.trim() ||
+          !tier.quantity.toString().trim()
+        ) {
+          tierValid = false;
+          setTiersError('All tier fields are required');
+          break;
+        }
+        if (!tierNamePattern.test(tier.name.trim())) {
+          tierValid = false;
+          setTiersError('Tier names can only contain letters, numbers, spaces, and hyphens');
+          break;
+        }
+        if (isNaN(tier.price) || Number(tier.price) < 0) {
+          tierValid = false;
+          setTiersError('Price must be a positive number');
+          break;
+        }
+        if (!benefitsPattern.test(tier.benefits.trim())) {
+          tierValid = false;
+          setTiersError('Benefits can only contain letters, numbers, spaces, and hyphens');
+          break;
+        }
+        if (!Number.isInteger(Number(tier.quantity)) || Number(tier.quantity) <= 0) {
+          tierValid = false;
+          setTiersError('Quantity must be a positive integer');
+          break;
+        }
+      }
 
-      if (!tiersValid) {
-        setTiersError('All tier fields are required and quantity must be greater than 0');
-        valid = false;
-      } else {
+      if (tierValid) {
         setTiersError('');
+      } else {
+        valid = false;
       }
     }
 
@@ -281,10 +351,16 @@ const AdminPage = () => {
     }
   };
 
-  // Handle typing in the location input
+  // Handle typing in the location input with input restrictions
   const handleLocationInputChange = (e) => {
-    setLocation(e.target.value);
-    setValue(e.target.value); // Update the value for the autocomplete suggestions
+    const inputValue = e.target.value;
+    if (locationPattern.test(inputValue)) {
+      setLocation(inputValue);
+      setValue(inputValue); // Update the value for the autocomplete suggestions
+      setLocationError(''); // Clear previous errors if any
+    } else {
+      setLocationError('Only letters, numbers, spaces, commas, periods, and hyphens are allowed');
+    }
   };
 
   // Compute if the form is complete
@@ -328,9 +404,17 @@ const AdminPage = () => {
                 label="Title"
                 placeholder="Enter the event title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  if (titlePattern.test(inputValue)) {
+                    setTitle(inputValue);
+                    setTitleError('');
+                  } else {
+                    setTitleError('Only letters, numbers, spaces, and hyphens are allowed');
+                  }
+                }}
                 error={!!titleError}
-                helperText={titleError}
+                helperText={titleError || 'Only letters, numbers, spaces, and hyphens are allowed'}
                 InputProps={{
                   sx: { borderRadius: 2 },
                 }}
@@ -347,9 +431,17 @@ const AdminPage = () => {
                 label="Description"
                 placeholder="Enter a detailed description of the event"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  if (descriptionPattern.test(inputValue)) {
+                    setDescription(inputValue);
+                    setDescriptionError('');
+                  } else {
+                    setDescriptionError('Only letters, numbers, spaces, and hyphens are allowed');
+                  }
+                }}
                 error={!!descriptionError}
-                helperText={descriptionError}
+                helperText={descriptionError || 'Only letters, numbers, spaces, and hyphens are allowed'}
                 InputProps={{
                   sx: { borderRadius: 2 },
                 }}
@@ -389,14 +481,18 @@ const AdminPage = () => {
                 fullWidth
                 label="Search Location"
                 value={location} // Controlled by location state
-                onChange={handleLocationInputChange} // Use custom handler for real-time updates
+                onChange={handleLocationInputChange} // Use custom handler with input restrictions
                 disabled={!ready}
-                helperText={locationError || 'Start typing to search for a location'}
+                error={!!locationError}
+                helperText={
+                  locationError ||
+                  'Only letters, numbers, spaces, commas, periods, and hyphens are allowed. Start typing to search for a location'
+                }
                 InputProps={{
                   sx: { borderRadius: 2 },
                 }}
               />
-            
+
               {/* Suggestion Dropdown */}
               {status === 'OK' && (
                 <Box
@@ -522,6 +618,16 @@ const AdminPage = () => {
                       placeholder="e.g., VIP"
                       value={tier.name}
                       onChange={(e) => handleTierChange(index, 'name', e.target.value)}
+                      error={
+                        tiersError.includes('Tier names can') ||
+                        tiersError.includes('All tier fields are required')
+                      }
+                      helperText={
+                        tiersError.includes('Tier names can') ||
+                        tiersError.includes('All tier fields are required')
+                          ? 'Only letters, numbers, spaces, and hyphens are allowed'
+                          : ''
+                      }
                       InputProps={{
                         sx: { borderRadius: 2 },
                       }}
@@ -539,6 +645,16 @@ const AdminPage = () => {
                       value={tier.price}
                       onChange={(e) => handleTierChange(index, 'price', e.target.value)}
                       inputProps={{ min: 0, step: '0.01' }}
+                      error={
+                        tiersError.includes('Price must be') ||
+                        tiersError.includes('All tier fields are required')
+                      }
+                      helperText={
+                        tiersError.includes('Price must be') ||
+                        tiersError.includes('All tier fields are required')
+                          ? 'Enter a valid positive number'
+                          : ''
+                      }
                       InputProps={{
                         sx: { borderRadius: 2 },
                       }}
@@ -555,7 +671,17 @@ const AdminPage = () => {
                       type="number"
                       value={tier.quantity}
                       onChange={(e) => handleTierChange(index, 'quantity', e.target.value)}
-                      inputProps={{ min: 1 }}
+                      inputProps={{ min: 1, step: '1' }}
+                      error={
+                        tiersError.includes('Quantity must be') ||
+                        tiersError.includes('All tier fields are required')
+                      }
+                      helperText={
+                        tiersError.includes('Quantity must be') ||
+                        tiersError.includes('All tier fields are required')
+                          ? 'Enter a valid positive integer'
+                          : ''
+                      }
                       InputProps={{
                         sx: { borderRadius: 2 },
                       }}
@@ -571,6 +697,16 @@ const AdminPage = () => {
                       placeholder="e.g., Backstage access"
                       value={tier.benefits}
                       onChange={(e) => handleTierChange(index, 'benefits', e.target.value)}
+                      error={
+                        tiersError.includes('Benefits can') ||
+                        tiersError.includes('All tier fields are required')
+                      }
+                      helperText={
+                        tiersError.includes('Benefits can') ||
+                        tiersError.includes('All tier fields are required')
+                          ? 'Only letters, numbers, spaces, and hyphens are allowed'
+                          : ''
+                      }
                       InputProps={{
                         sx: { borderRadius: 2 },
                       }}

@@ -1,3 +1,5 @@
+// src/components/Admin/ManageBandsPerformers.js
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -33,6 +35,20 @@ const ManageBandsPerformers = () => {
   const [loading, setLoading] = useState(false); // Loading state for event selection
   const [openDialog, setOpenDialog] = useState(false); // Dialog open state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // Snackbar state
+
+  // Error states for edit dialog
+  const [editErrors, setEditErrors] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    paymentAmount: '',
+  });
+
+  // Regex Patterns
+  const namePattern = /^[A-Za-z0-9 ]*$/;
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phonePattern = /^[0-9()+\- ]*$/; // Allows numbers, parentheses, plus, minus, and spaces
+  const paymentAmountPattern = /^\d+(\.\d{1,2})?$/;
 
   // Fetch all events on component mount
   useEffect(() => {
@@ -148,6 +164,7 @@ const ManageBandsPerformers = () => {
         return;
       }
     }
+    setEditErrors({ name: '', email: '', phone: '', paymentAmount: '' }); // Reset errors
     setOpenDialog(true); // Open dialog for editing
   };
 
@@ -157,10 +174,59 @@ const ManageBandsPerformers = () => {
     setEditData(null);
     setEditType(null);
     setEditIndex(null);
+    setEditErrors({ name: '', email: '', phone: '', paymentAmount: '' });
   };
 
   // Handle save of the edited data
   const handleSave = async () => {
+    // Validate before saving
+    const { name, email, phone, paymentAmount } = editData;
+    let valid = true;
+    let errors = { name: '', email: '', phone: '', paymentAmount: '' };
+
+    // Name Validation
+    if (!name.trim()) {
+      errors.name = `${editType === 'band' ? 'Band' : 'Performer'} name is required`;
+      valid = false;
+    } else if (!namePattern.test(name.trim())) {
+      errors.name = 'Only letters and numbers are allowed';
+      valid = false;
+    }
+
+    // Email Validation
+    if (!email.trim()) {
+      errors.email = 'Email is required';
+      valid = false;
+    } else if (!emailPattern.test(email.trim())) {
+      errors.email = 'Invalid email format';
+      valid = false;
+    }
+
+    // Phone Validation
+    if (!phone.trim()) {
+      errors.phone = 'Phone number is required';
+      valid = false;
+    } else if (!phonePattern.test(phone.trim())) {
+      errors.phone = 'Invalid phone number format';
+      valid = false;
+    }
+
+    // Payment Amount Validation
+    if (!paymentAmount.toString().trim()) {
+      errors.paymentAmount = 'Payment amount is required';
+      valid = false;
+    } else if (!paymentAmountPattern.test(paymentAmount.toString().trim())) {
+      errors.paymentAmount = 'Invalid payment amount';
+      valid = false;
+    }
+
+    setEditErrors(errors);
+
+    if (!valid) {
+      setSnackbar({ open: true, message: 'Please fix the errors in the form.', severity: 'error' });
+      return;
+    }
+
     let updatedBands = [...bands];
     let updatedPerformers = [...performers];
 
@@ -197,9 +263,41 @@ const ManageBandsPerformers = () => {
     }
   };
 
-  // Handle input changes in the dialog
+  // Handle input changes in the dialog with validations
   const handleInputChange = (field, value) => {
+    // Update editData
     setEditData((prev) => ({ ...prev, [field]: value }));
+
+    // Validate input
+    let errorMsg = '';
+
+    if (field === 'name') {
+      if (!value.trim()) {
+        errorMsg = `${editType === 'band' ? 'Band' : 'Performer'} name is required`;
+      } else if (!namePattern.test(value.trim())) {
+        errorMsg = 'Only letters and numbers are allowed';
+      }
+    } else if (field === 'email') {
+      if (!value.trim()) {
+        errorMsg = 'Email is required';
+      } else if (!emailPattern.test(value.trim())) {
+        errorMsg = 'Invalid email format';
+      }
+    } else if (field === 'phone') {
+      if (!value.trim()) {
+        errorMsg = 'Phone number is required';
+      } else if (!phonePattern.test(value.trim())) {
+        errorMsg = 'Invalid phone number format';
+      }
+    } else if (field === 'paymentAmount') {
+      if (!value.toString().trim()) {
+        errorMsg = 'Payment amount is required';
+      } else if (!paymentAmountPattern.test(value.toString().trim())) {
+        errorMsg = 'Invalid payment amount';
+      }
+    }
+
+    setEditErrors((prev) => ({ ...prev, [field]: errorMsg }));
   };
 
   return (
@@ -357,38 +455,98 @@ const ManageBandsPerformers = () => {
         <DialogTitle>Edit {editType === 'performer' ? 'Performer' : 'Band'} Details</DialogTitle>
         <DialogContent>
           <Box component="form" noValidate sx={{ mt: 2 }}>
+            {/* Name Field */}
             <TextField
               margin="normal"
               label="Name"
               fullWidth
+              required
               value={editData?.name || ''}
               onChange={(e) => handleInputChange('name', e.target.value)}
+              onKeyPress={(e) => {
+                if (!/[A-Za-z0-9 ]/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => {
+                const pasteData = e.clipboardData.getData('text');
+                if (!namePattern.test(pasteData)) {
+                  e.preventDefault();
+                }
+              }}
+              error={Boolean(editErrors.name)}
+              helperText={editErrors.name}
             />
+
+            {/* Email Field */}
             <TextField
               margin="normal"
               label="Email"
               type="email"
               fullWidth
+              required
               value={editData?.email || ''}
               onChange={(e) => handleInputChange('email', e.target.value)}
+              onPaste={(e) => {
+                const pasteData = e.clipboardData.getData('text');
+                if (!emailPattern.test(pasteData)) {
+                  e.preventDefault();
+                }
+              }}
+              error={Boolean(editErrors.email)}
+              helperText={editErrors.email}
             />
+
+            {/* Phone Number Field */}
             <TextField
               margin="normal"
               label="Phone"
               type="tel"
               fullWidth
+              required
               value={editData?.phone || ''}
               onChange={(e) => handleInputChange('phone', e.target.value)}
+              onKeyPress={(e) => {
+                if (!/[0-9()+\- ]/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => {
+                const pasteData = e.clipboardData.getData('text');
+                if (!phonePattern.test(pasteData)) {
+                  e.preventDefault();
+                }
+              }}
+              error={Boolean(editErrors.phone)}
+              helperText={editErrors.phone}
             />
+
+            {/* Payment Amount Field */}
             <TextField
               margin="normal"
-              label="Payment Amount"
+              label="Payment Amount ($)"
               type="number"
               fullWidth
+              required
               value={editData?.paymentAmount || ''}
               onChange={(e) => handleInputChange('paymentAmount', e.target.value)}
-              InputProps={{ inputProps: { min: 0, step: '0.01' } }}
+              inputProps={{ min: "0", step: "0.01" }}
+              onKeyPress={(e) => {
+                if (!/[0-9.]/.test(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onPaste={(e) => {
+                const pasteData = e.clipboardData.getData('text');
+                if (!paymentAmountPattern.test(pasteData)) {
+                  e.preventDefault();
+                }
+              }}
+              error={Boolean(editErrors.paymentAmount)}
+              helperText={editErrors.paymentAmount}
             />
+
+            {/* Payment Status Field */}
             <FormControl fullWidth margin="normal">
               <InputLabel id="payment-status-label">Payment Status</InputLabel>
               <Select
@@ -407,7 +565,22 @@ const ManageBandsPerformers = () => {
           <Button onClick={handleDialogClose} color="inherit">
             Cancel
           </Button>
-          <Button onClick={handleSave} color="primary" variant="contained">
+          <Button
+            onClick={handleSave}
+            color="primary"
+            variant="contained"
+            disabled={
+              !editData ||
+              !editData.name.trim() ||
+              !editData.email.trim() ||
+              !editData.phone.trim() ||
+              !editData.paymentAmount.toString().trim() ||
+              Boolean(editErrors.name) ||
+              Boolean(editErrors.email) ||
+              Boolean(editErrors.phone) ||
+              Boolean(editErrors.paymentAmount)
+            }
+          >
             Save
           </Button>
         </DialogActions>

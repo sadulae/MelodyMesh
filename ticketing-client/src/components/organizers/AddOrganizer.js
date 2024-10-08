@@ -7,14 +7,18 @@ import axios from 'axios';
 
 const AddOrganizer = () => {
   const [organizerName, setOrganizerName] = useState('');
+  const [organizerNameError, setOrganizerNameError] = useState('');
   const [organizerRole, setOrganizerRole] = useState('');
   const [organizerEmail, setOrganizerEmail] = useState('');
+  const [organizerEmailError, setOrganizerEmailError] = useState('');
   const [contactNumber, setContactNumber] = useState('');
+  const [contactNumberError, setContactNumberError] = useState('');
   const [notes, setNotes] = useState('');
   const [startTime, setStartTime] = useState(null);
   const [endTime, setEndTime] = useState(null);
-  const [eventID, setEventID] = useState(''); // For event selection
-  const [events, setEvents] = useState([]); // Store available events
+  const [eventID, setEventID] = useState('');
+  const [events, setEvents] = useState([]);
+  const [timeError, setTimeError] = useState('');
 
   const roles = [
     'Event Manager',
@@ -27,7 +31,7 @@ const AddOrganizer = () => {
     'Logistics Coordinator',
     'Ticketing Manager',
     'Catering Manager',
-  ]; // Example roles for dropdown
+  ];
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -36,7 +40,7 @@ const AddOrganizer = () => {
         const response = await axios.get('http://localhost:5000/api/admin/organizer-events', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setEvents(response.data); // Store fetched events
+        setEvents(response.data);
       } catch (error) {
         console.error('Error fetching events:', error);
       }
@@ -45,24 +49,100 @@ const AddOrganizer = () => {
     fetchEvents();
   }, []);
 
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    const regex = /^[a-zA-Z\s]*$/;
+
+    if (regex.test(value)) {
+      const formattedName = value
+        .replace(/\s+/g, ' ') // Replace multiple spaces with a single space
+        .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize the first letter of each word
+
+      setOrganizerName(formattedName);
+      setOrganizerNameError('');
+    } else {
+      setOrganizerNameError('Please enter only letters and spaces.');
+    }
+  };
+
+  const handleContactNumberChange = (e) => {
+    const value = e.target.value;
+    const regex = /^[0-9]*$/;
+
+    if (regex.test(value) && value.length <= 10) {
+      setContactNumber(value);
+      setContactNumberError('');
+
+      if (value.length === 10) {
+        setContactNumberError('');
+      } else if (value.length > 0 && value.length < 10) {
+        setContactNumberError('Contact number must be exactly 10 digits.');
+      }
+    } else {
+      setContactNumberError('Please enter only numbers (10 digits required).');
+    }
+  };
+
+  const handleEmailChange = (e) => {
+    const value = e.target.value;
+    const regex = /^[a-zA-Z0-9._@-]*$/;
+
+    if (regex.test(value)) {
+      setOrganizerEmail(value);
+      setOrganizerEmailError('');
+
+      if (value) {
+        const emailValidationRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z]+\.[a-zA-Z]{2,}$/;
+        if (!emailValidationRegex.test(value)) {
+          setOrganizerEmailError('Please enter a valid email address.');
+        } else {
+          setOrganizerEmailError('');
+        }
+      }
+    } else {
+      setOrganizerEmailError('Please enter valid characters for email.');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    // Prepare the form data
+
+    // Ensure the contact number is exactly 10 digits before submitting
+    if (contactNumber.length !== 10) {
+      setContactNumberError('Contact number must be exactly 10 digits.');
+      return;
+    }
+
+    // Ensure the email is valid before submitting
+    if (organizerEmailError) {
+      return;
+    }
+
+    // Validate start time and end time
+    const now = new Date();
+    if (!startTime || !endTime || startTime <= now || endTime <= now) {
+      setTimeError('Both start time and end time must be in the future.');
+      return;
+    }
+
+    if (endTime <= startTime) {
+      setTimeError('End time must be after start time.');
+      return;
+    } else {
+      setTimeError(''); // Clear error if the time is valid
+    }
+
     const formData = {
       eventID,
       organizerName,
       organizerRole,
-      organizerContact: contactNumber, // Fix this key to match the backend
+      organizerContact: contactNumber,
       organizerEmail,
       notes,
       startTime,
       endTime,
     };
-  
-    // Log form data for debugging
-    console.log('Form Data:', formData);
-  
+
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
@@ -72,10 +152,9 @@ const AddOrganizer = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       if (response.status === 201) {
         alert('Organizer added successfully!');
-        // Clear form fields
         setOrganizerName('');
         setOrganizerRole('');
         setOrganizerEmail('');
@@ -92,8 +171,6 @@ const AddOrganizer = () => {
       alert(`Error occurred while submitting organizer details: ${error.response?.data.message || error.message}`);
     }
   };
-  
-  
 
   return (
     <Container>
@@ -102,7 +179,6 @@ const AddOrganizer = () => {
       </Typography>
       <form onSubmit={handleSubmit}>
         <Grid container spacing={2}>
-
           {/* Dropdown to select Event */}
           <Grid item xs={12}>
             <TextField
@@ -126,7 +202,9 @@ const AddOrganizer = () => {
             <TextField
               label="Organizer Name"
               value={organizerName}
-              onChange={(e) => setOrganizerName(e.target.value)}
+              onChange={handleNameChange}
+              error={!!organizerNameError}
+              helperText={organizerNameError}
               fullWidth
               required
             />
@@ -155,7 +233,9 @@ const AddOrganizer = () => {
             <TextField
               label="Contact Number"
               value={contactNumber}
-              onChange={(e) => setContactNumber(e.target.value)}
+              onChange={handleContactNumberChange}
+              error={!!contactNumberError}
+              helperText={contactNumberError}
               fullWidth
               required
             />
@@ -166,7 +246,9 @@ const AddOrganizer = () => {
             <TextField
               label="Organizer Email"
               value={organizerEmail}
-              onChange={(e) => setOrganizerEmail(e.target.value)}
+              onChange={handleEmailChange}
+              error={!!organizerEmailError}
+              helperText={organizerEmailError}
               fullWidth
               required
             />
@@ -188,25 +270,62 @@ const AddOrganizer = () => {
               <DateTimePicker
                 label="Start Time"
                 value={startTime}
-                onChange={(newValue) => setStartTime(newValue)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
+                onChange={(newValue) => {
+                  const now = new Date();
+                  if (newValue <= now) {
+                    setTimeError('Start time must be after the current date and time.');
+                    setStartTime(null); // Clear the start time if invalid
+                  } else {
+                    setStartTime(newValue);
+                    setTimeError(''); // Clear error on valid time
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    fullWidth 
+                    error={!!timeError} 
+                    helperText={timeError} 
+                    required 
+                  />
+                )}
+                minDateTime={new Date()} // Set minimum date/time to current time
               />
             </LocalizationProvider>
           </Grid>
+
           <Grid item xs={12} sm={6}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateTimePicker
                 label="End Time"
                 value={endTime}
-                onChange={(newValue) => setEndTime(newValue)}
-                renderInput={(params) => <TextField {...params} fullWidth />}
+                onChange={(newValue) => {
+                  const now = new Date();
+                  if (newValue <= now) {
+                    setTimeError('End time must be after the current date and time.');
+                    setEndTime(null); // Clear the end time if invalid
+                  } else {
+                    setEndTime(newValue);
+                    setTimeError(''); // Clear error on valid time
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    fullWidth 
+                    error={!!timeError} 
+                    helperText={timeError} 
+                    required 
+                  />
+                )}
+                minDateTime={new Date()} // Set minimum date/time to current time
               />
             </LocalizationProvider>
           </Grid>
 
           {/* Submit Button */}
           <Grid item xs={12}>
-            <Button type="submit" variant="contained" color="primary" fullWidth>
+            <Button variant="contained" type="submit">
               Add Organizer
             </Button>
           </Grid>

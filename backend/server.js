@@ -19,6 +19,7 @@ const sponsorRoutes = require('./routes/sponsors');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const feedbackUserRoutes = require('./routes/feedbackUserRoutes');
 const consolidatedDetailsRoute = require('./routes/consolidatedDetails');
+const pdfRoutes = require('./routes/pdfRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -51,6 +52,7 @@ app.use('/api/admin/volunteers', volunteersRoutes);
 app.use('/api/admin/organizers', organizersRoutes);
 app.use('/api/admin/sponsors', sponsorRoutes);
 app.use('/api', consolidatedDetailsRoute);
+app.use('/pdf', pdfRoutes);
 
 
 // Error handling middleware (should be after routes)

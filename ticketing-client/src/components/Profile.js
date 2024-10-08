@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode'; // Corrected import
 import {
   Container,
   Typography,
@@ -10,14 +10,17 @@ import {
   Avatar,
   Grid,
   Divider,
+  Button,
 } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate(); // Hook for navigation
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -30,7 +33,11 @@ const Profile = () => {
         const decodedToken = jwtDecode(token);
         const userId = decodedToken.id;
 
-        const response = await axios.get(`http://localhost:5000/api/users/${userId}`);
+        const response = await axios.get(`http://localhost:5000/api/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // Include token in headers if required
+          },
+        });
         setUserProfile(response.data);
         setLoading(false);
       } catch (error) {
@@ -42,6 +49,16 @@ const Profile = () => {
 
     fetchProfileData();
   }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('token'); // Remove token from localStorage
+    setUserProfile(null);
+    navigate('/login'); // Redirect to login page
+  };
+
+  const handleAddFeedback = () => {
+    navigate('/feedback'); // Navigate to the feedback submission page
+  };
 
   if (loading) {
     return (
@@ -115,6 +132,51 @@ const Profile = () => {
           <Typography variant="body1">
             <strong>Date of Birth:</strong> {formattedDob}
           </Typography>
+        </Box>
+
+        {/* Action Buttons */}
+        <Box sx={{ display: 'flex', gap: 2, mt: 4, flexWrap: 'wrap' }}>
+          {/* Add Feedback Button */}
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleAddFeedback}
+            sx={{
+              textTransform: 'none',
+              fontFamily: "'Poppins', sans-serif",
+              borderRadius: '20px',
+              padding: '10px 30px',
+              fontSize: '1rem',
+              transition: 'box-shadow 0.3s ease-in-out',
+              '&:hover': {
+                boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+              },
+            }}
+          >
+            Add Feedback
+          </Button>
+
+          {/* Sign Out Button */}
+          <Button
+            variant="outlined"
+            onClick={handleSignOut}
+            sx={{
+              textTransform: 'none',
+              fontFamily: "'Poppins', sans-serif",
+              borderRadius: '20px',
+              padding: '10px 30px',
+              fontSize: '1rem',
+              borderColor: 'primary.main',
+              color: 'primary.main',
+              transition: 'box-shadow 0.3s ease-in-out',
+              '&:hover': {
+                boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+                borderColor: 'primary.main',
+              },
+            }}
+          >
+            Sign Out
+          </Button>
         </Box>
       </Paper>
     </Container>

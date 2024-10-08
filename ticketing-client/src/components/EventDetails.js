@@ -1,3 +1,5 @@
+// src/components/EventDetails.js
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
@@ -20,6 +22,11 @@ import {
 } from '@mui/material';
 import { AccessTime, LocationOn, Event as EventIcon, ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+// Import pdfmake and virtual file system
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+
+pdfMake.vfs = pdfFonts.pdfMake.vfs; // Set the virtual file system for pdfMake
 
 const EventDetails = () => {
   const { eventId } = useParams(); // Get the event ID from the URL
@@ -79,22 +86,289 @@ const EventDetails = () => {
 
     try {
       const response = await axios.post(
-        `http://localhost:5000/api/events/${event._id}/purchase`,
+        `http://localhost:5000/api/events/${event._id}/update-tickets`,
         { tickets: purchaseData }
       );
       setSnackbarMessage(response.data.message);
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
       // Refresh event data to update available quantities
-      fetchEventDetails();
+      await fetchEventDetails();
       // Reset selected quantities
       setSelectedQuantities({});
+      // Generate and download the ticket
+      generateTicket(purchaseData);
     } catch (error) {
       console.error('Error purchasing tickets:', error);
       setSnackbarMessage(error.response?.data?.message || 'Failed to purchase tickets');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
+  };
+
+  // Function to generate and download the ticket
+  const generateTicket = (purchaseData) => {
+    // Currency formatter for Sri Lankan Rupees
+    const currencyFormatter = new Intl.NumberFormat('en-LK', {
+      style: 'currency',
+      currency: 'LKR',
+      minimumFractionDigits: 2,
+    });
+
+    // Calculate total amount
+    const totalAmount = purchaseData.reduce((sum, { tierId, quantity }) => {
+      const tier = event.tiers.find((t) => t._id === tierId);
+      return sum + tier.price * quantity;
+    }, 0);
+
+    // Prepare the ticket content
+    const docDefinition = {
+      content: [
+        // Header Section with MelodyMesh text
+        {
+          columns: [
+            {
+              text: 'MelodyMesh',
+              color: '#007BFF',
+              fontSize: 24,
+              bold: true,
+              margin: [0, 0, 0, 0],
+            },
+            {
+              text: 'Ticket Confirmation',
+              style: 'header',
+              alignment: 'right',
+            },
+          ],
+          margin: [0, 0, 0, 20],
+        },
+        // Date and Time Issued
+        {
+          text: `Date of Issue: ${new Date().toLocaleString()}`,
+          alignment: 'right',
+          margin: [0, 0, 0, 10],
+          fontSize: 10,
+          color: '#555',
+        },
+        // Divider Line
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0,
+              y1: 0,
+              x2: 515,
+              y2: 0,
+              lineWidth: 1,
+              lineColor: '#CCCCCC',
+            },
+          ],
+          margin: [0, 10, 0, 10],
+        },
+        // Event Details Heading
+        {
+          text: 'Event Details',
+          style: 'sectionHeader',
+          margin: [0, 0, 0, 10],
+        },
+        // Event Details Content
+        {
+          columns: [
+            [
+              { text: 'Event Name:', style: 'label' },
+              { text: event.title, style: 'value' },
+            ],
+            [
+              { text: 'Date & Time:', style: 'label' },
+              {
+                text: `${new Date(event.date).toLocaleDateString('en-LK', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                })} at ${new Date(event.date).toLocaleTimeString('en-LK', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}`,
+                style: 'value',
+              },
+            ],
+          ],
+          columnGap: 20,
+        },
+        {
+          columns: [
+            [
+              { text: 'Location:', style: 'label' },
+              { text: event.location, style: 'value' },
+            ],
+            // Additional event details can be added here if needed
+          ],
+          columnGap: 20,
+          margin: [0, 10, 0, 10],
+        },
+        // Divider Line
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0,
+              y1: 0,
+              x2: 515,
+              y2: 0,
+              lineWidth: 1,
+              lineColor: '#CCCCCC',
+            },
+          ],
+          margin: [0, 10, 0, 10],
+        },
+        // Ticket Details Heading
+        {
+          text: 'Ticket Details',
+          style: 'sectionHeader',
+          margin: [0, 0, 0, 10],
+        },
+        // Ticket Details Table
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto', 'auto', 'auto'],
+            body: [
+              [
+                { text: 'Tier', style: 'tableHeader' },
+                { text: 'Quantity', style: 'tableHeader', alignment: 'right' },
+                { text: 'Price', style: 'tableHeader', alignment: 'right' },
+                { text: 'Subtotal', style: 'tableHeader', alignment: 'right' },
+              ],
+              ...purchaseData.map(({ tierId, quantity }) => {
+                const tier = event.tiers.find((t) => t._id === tierId);
+                const price = tier.price;
+                const subtotal = price * quantity;
+                return [
+                  { text: tier.name, style: 'tableData' },
+                  { text: quantity, style: 'tableData', alignment: 'right' },
+                  {
+                    text: currencyFormatter.format(price),
+                    style: 'tableData',
+                    alignment: 'right',
+                  },
+                  {
+                    text: currencyFormatter.format(subtotal),
+                    style: 'tableData',
+                    alignment: 'right',
+                  },
+                ];
+              }),
+              // Total row
+              [
+                { text: 'Total', colSpan: 3, alignment: 'right', style: 'tableTotal' },
+                {},
+                {},
+                {
+                  text: currencyFormatter.format(totalAmount),
+                  style: 'tableTotal',
+                  alignment: 'right',
+                },
+              ],
+            ],
+          },
+          layout: {
+            fillColor: (rowIndex) => {
+              return rowIndex === 0 ? '#F5F5F5' : null;
+            },
+            hLineWidth: () => 0,
+            vLineWidth: () => 0,
+            hLineColor: () => '#FFFFFF',
+            paddingLeft: (i) => (i === 0 ? 0 : 8),
+            paddingRight: (i) => (i === 0 ? 0 : 8),
+            paddingTop: (i) => 4,
+            paddingBottom: (i) => 4,
+          },
+        },
+        // Divider Line
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0,
+              y1: 0,
+              x2: 515,
+              y2: 0,
+              lineWidth: 1,
+              lineColor: '#CCCCCC',
+            },
+          ],
+          margin: [0, 20, 0, 10],
+        },
+        // Footer Message
+        {
+          text: 'Thank you for your purchase!',
+          style: 'footer',
+          alignment: 'center',
+          margin: [0, 20, 0, 0],
+        },
+        // Optional Terms and Conditions
+        {
+          text: 'Please present this ticket at the event entrance. Tickets are non-refundable and non-transferable.',
+          style: 'terms',
+          alignment: 'center',
+          margin: [0, 10, 0, 0],
+        },
+      ],
+      styles: {
+        header: {
+          fontSize: 22,
+          bold: true,
+          color: '#4e73df',
+        },
+        sectionHeader: {
+          fontSize: 16,
+          bold: true,
+          color: '#333333',
+        },
+        label: {
+          fontSize: 12,
+          bold: true,
+          color: '#555555',
+        },
+        value: {
+          fontSize: 12,
+          color: '#000000',
+        },
+        tableHeader: {
+          fontSize: 12,
+          bold: true,
+          color: '#555555',
+          fillColor: '#F5F5F5',
+        },
+        tableData: {
+          fontSize: 12,
+          color: '#000000',
+        },
+        tableTotal: {
+          fontSize: 12,
+          bold: true,
+          color: '#000000',
+        },
+        footer: {
+          fontSize: 14,
+          bold: true,
+          color: '#4e73df',
+        },
+        terms: {
+          fontSize: 10,
+          color: '#777777',
+        },
+      },
+      defaultStyle: {
+        fontSize: 12,
+      },
+      pageMargins: [40, 60, 40, 60],
+      // Removed the images section since we're not using an image
+    };
+
+    // Generate PDF and download
+    pdfMake.createPdf(docDefinition).download('ticket.pdf');
   };
 
   const handleSnackbarClose = () => {

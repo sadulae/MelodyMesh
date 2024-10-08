@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Grid, Box, TextField, InputAdornment } from '@mui/material';
+import { Grid, Box, TextField, InputAdornment, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
-import { Typography } from '@mui/material';
-import EventCard from '../components/EventCard'; // Import the new EventCard component
+import EventCard from '../components/EventCard'; // Ensure this component exists
+import Lottie from 'lottie-react';
+import loadingAnimation from '../assets/animations/loading.json'; // Adjust the path as needed
 
 const Home = () => {
   const [events, setEvents] = useState([]);
@@ -14,6 +15,8 @@ const Home = () => {
   const [loopNum, setLoopNum] = useState(0); // Keep track of typing loop
   const [delta, setDelta] = useState(150); // Typing speed
   const [isPaused, setIsPaused] = useState(false); // To control pauses between typing/deleting phases
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(''); // Error state
 
   const navigate = useNavigate();
 
@@ -22,8 +25,11 @@ const Home = () => {
       try {
         const response = await axios.get('http://localhost:5000/api/pages/events');
         setEvents(response.data);
+        setLoading(false); // Data fetched successfully
       } catch (error) {
         console.error('Error fetching events:', error);
+        setError('Failed to load events. Please try again later.');
+        setLoading(false); // Stop loading even if there's an error
       }
     };
 
@@ -71,6 +77,7 @@ const Home = () => {
 
   return (
     <div style={{ padding: '40px 20px', backgroundColor: '#fff' }}>
+      {/* Search Bar */}
       <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: '60px', marginTop: '20px' }}>
         <TextField
           variant="outlined"
@@ -109,26 +116,53 @@ const Home = () => {
           }}
         />
       </Box>
-      <Grid container spacing={4} justifyContent="center">
-        {filteredEvents.length === 0 ? (
-          <Grid container justifyContent="center" alignItems="center" style={{ height: '60vh' }}>
-            <Grid item xs={12}>
-              <Typography variant="h5" style={{ textAlign: 'center', marginBottom: '20px' }}>
-                No Events Available
-              </Typography>
-              <Typography variant="body1" style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
-                We're sorry, but there are no music events scheduled at the moment. Please check back later for updates.
-              </Typography>
-            </Grid>
+
+      {/* Loading Animation */}
+      {loading ? (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '60vh',
+          }}
+        >
+          <Lottie animationData={loadingAnimation} loop={true} style={{ width: 300, height: 300 }} />
+        </Box>
+      ) : error ? (
+        // Error Message
+        <Grid container justifyContent="center" alignItems="center" style={{ height: '60vh' }}>
+          <Grid item xs={12} style={{ textAlign: 'center' }}>
+            <Typography variant="h5" color="error" gutterBottom>
+              {error}
+            </Typography>
           </Grid>
-        ) : (
-          filteredEvents.map((event) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={event._id}>
-              <EventCard event={event} onClick={() => handleEventClick(event._id)} />
+        </Grid>
+      ) : (
+        // Events Grid
+        <Grid container spacing={4} justifyContent="center">
+          {filteredEvents.length === 0 ? (
+            // No Events Available Message
+            <Grid container justifyContent="center" alignItems="center" style={{ height: '60vh' }}>
+              <Grid item xs={12}>
+                <Typography variant="h5" style={{ textAlign: 'center', marginBottom: '20px' }}>
+                  No Events Available
+                </Typography>
+                <Typography variant="body1" style={{ textAlign: 'center', color: '#666', marginBottom: '20px' }}>
+                  We're sorry, but there are no music events scheduled at the moment. Please check back later for updates.
+                </Typography>
+              </Grid>
             </Grid>
-          ))
-        )}
-      </Grid>
+          ) : (
+            // Display EventCards
+            filteredEvents.map((event) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={event._id}>
+                <EventCard event={event} onClick={() => handleEventClick(event._id)} />
+              </Grid>
+            ))
+          )}
+        </Grid>
+      )}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   TextField, Button, Grid, Typography, Box, MenuItem,
@@ -17,24 +17,125 @@ const AddOrganizerEvent = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Validation states
+  const [nameError, setNameError] = useState('');
+  const [dateError, setDateError] = useState('');
+  const [timeError, setTimeError] = useState('');
+  const [statusError, setStatusError] = useState('');
+
+  // Form validity
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  // Regular expression for event name validation
+  const eventNameRegex = /^[A-Za-z0-9,\-\s]*$/;
+
+  // Function to validate event name
+  const validateName = (name) => {
+    if (!name.trim()) {
+      setNameError('Event name is required.');
+      return false;
+    } else if (!eventNameRegex.test(name)) {
+      setNameError('Only letters, numbers, commas, dashes, and spaces are allowed.');
+      return false;
+    } else {
+      setNameError('');
+      return true;
+    }
+  };
+
+  // Function to validate event date
+  const validateDate = (date) => {
+    if (!date) {
+      setDateError('Event date is required.');
+      return false;
+    }
+    const selectedDate = new Date(date);
+    const today = new Date();
+    // Remove time part for comparison
+    selectedDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    if (selectedDate < today) {
+      setDateError('Event date cannot be in the past.');
+      return false;
+    } else {
+      setDateError('');
+      return true;
+    }
+  };
+
+  // Function to validate event time
+  const validateTime = (time) => {
+    if (!time) {
+      setTimeError('Event time is required.');
+      return false;
+    } else {
+      setTimeError('');
+      return true;
+    }
+  };
+
+  // Function to validate status
+  const validateStatus = (status) => {
+    if (!status) {
+      setStatusError('Status is required.');
+      return false;
+    } else {
+      setStatusError('');
+      return true;
+    }
+  };
+
+  // Function to handle event name input with character restriction
+  const handleNameChange = (e) => {
+    const input = e.target.value;
+    // Allow only valid characters: letters, numbers, commas, dashes, and spaces
+    const filteredInput = input.replace(/[^A-Za-z0-9,\-\s]/g, '');
+    setName(filteredInput);
+    validateName(filteredInput);
+  };
+
+  // Function to get today's date for minDate in DatePicker
+  const getTodayDate = () => {
+    const today = new Date();
+    // Reset time to midnight
+    today.setHours(0, 0, 0, 0);
+    return today;
+  };
+
+  // useEffect to check form validity whenever inputs or errors change
+  useEffect(() => {
+    const isNameValid = validateName(name);
+    const isDateValid = validateDate(date);
+    const isTimeValid = validateTime(time);
+    const isStatusValid = validateStatus(status);
+    setIsFormValid(isNameValid && isDateValid && isTimeValid && isStatusValid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, date, time, status]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate required fields
-    if (!name || !date || !time || !status) {
-      setError('Please fill in all required fields.');
+    // Final validation before submission
+    const isNameValid = validateName(name);
+    const isDateValid = validateDate(date);
+    const isTimeValid = validateTime(time);
+    const isStatusValid = validateStatus(status);
+
+    if (!isNameValid || !isDateValid || !isTimeValid || !isStatusValid) {
+      setError('Please fix the errors in the form before submitting.');
       return;
     }
 
     setLoading(true);
     setError('');
+    setSuccess('');
 
     // Extract date and time components
     const formattedDate = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
     const formattedTime = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // 'HH:MM'
 
     const eventData = {
-      eventName: name,
+      eventName: name.trim(),
       eventDate: formattedDate, // Send date as 'YYYY-MM-DD'
       eventTime: formattedTime, // Send time as 'HH:MM'
       status,
@@ -45,7 +146,7 @@ const AddOrganizerEvent = () => {
       const token = localStorage.getItem('token');
 
       if (!token) {
-        setError('User not authenticated');
+        setError('User not authenticated.');
         setLoading(false);
         return;
       }
@@ -98,8 +199,11 @@ const AddOrganizerEvent = () => {
                 variant="outlined"
                 fullWidth
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={handleNameChange}
                 required
+                error={!!nameError}
+                helperText={nameError}
+                inputProps={{ maxLength: 100 }} // Optional: limit max length
               />
             </Grid>
 
@@ -108,8 +212,20 @@ const AddOrganizerEvent = () => {
               <DatePicker
                 label="Event Date"
                 value={date}
-                onChange={(newValue) => setDate(newValue)}
-                renderInput={(params) => <TextField {...params} required fullWidth />}
+                onChange={(newValue) => {
+                  setDate(newValue);
+                  validateDate(newValue);
+                }}
+                minDate={getTodayDate()}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    required
+                    fullWidth
+                    error={!!dateError}
+                    helperText={dateError}
+                  />
+                )}
               />
             </Grid>
 
@@ -118,8 +234,19 @@ const AddOrganizerEvent = () => {
               <TimePicker
                 label="Event Time"
                 value={time}
-                onChange={(newValue) => setTime(newValue)}
-                renderInput={(params) => <TextField {...params} required fullWidth />}
+                onChange={(newValue) => {
+                  setTime(newValue);
+                  validateTime(newValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    required
+                    fullWidth
+                    error={!!timeError}
+                    helperText={timeError}
+                  />
+                )}
               />
             </Grid>
 
@@ -129,10 +256,15 @@ const AddOrganizerEvent = () => {
                 select
                 label="Status"
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  validateStatus(e.target.value);
+                }}
                 variant="outlined"
                 fullWidth
                 required
+                error={!!statusError}
+                helperText={statusError}
               >
                 <MenuItem value="upcoming">Upcoming</MenuItem>
                 <MenuItem value="ongoing">Ongoing</MenuItem>
@@ -147,7 +279,7 @@ const AddOrganizerEvent = () => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={loading}
+                  disabled={!isFormValid || loading}
                   fullWidth
                 >
                   Add Event

@@ -20,14 +20,16 @@ import {
 import { DateTimePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const ManageOrganizers = () => {
   const [events, setEvents] = useState([]);
   const [organizers, setOrganizers] = useState({});
   const [loading, setLoading] = useState(true);
-  const [editOrganizer, setEditOrganizer] = useState(null); // Organizer details for editing
-  const [open, setOpen] = useState(false); // Modal state
-  const [searchQuery, setSearchQuery] = useState(''); // Search query state
+  const [editOrganizer, setEditOrganizer] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchEventsAndOrganizers = async () => {
@@ -131,15 +133,57 @@ const ManageOrganizers = () => {
       alert('Error occurred while sending notification.');
     }
   };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditOrganizer((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  
+    if (name === 'organizerName') {
+      const regex = /^[a-zA-Z\s]*$/; // Regex to allow only letters and spaces
+      if (!regex.test(value)) {
+        return; // If the value contains invalid characters, do not update the state
+      }
+  
+      // Automatically capitalize the first letter of each word
+      const capitalizedValue = value
+        .split(' ')
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ');
+  
+      setEditOrganizer((prev) => ({
+        ...prev,
+        [name]: capitalizedValue,
+      }));
+    } else if (name === 'organizerContact') {
+      const contactRegex = /^[0-9]*$/; // Regex to allow only numbers
+  
+      // Check if the value is numeric and does not exceed ten digits
+      if (contactRegex.test(value) && value.length <= 10) {
+        setEditOrganizer((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+    } else if (name === 'organizerEmail') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex for validating email
 
+      // If the email format is invalid, do not update the state
+      if (!emailRegex.test(value)) {
+        return; // If the value contains invalid email format, do not update the state
+      }
+      setEditOrganizer((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    } else {
+      // For other fields, just update the value as usual
+      setEditOrganizer((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+    
+    
+  
   // Function to handle search input change
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -159,174 +203,201 @@ const ManageOrganizers = () => {
     );
   };
 
+  // Function to generate PDF report
+  const generateReport = () => {
+    const doc = new jsPDF();
+
+    // Add 'Melody Mesh' title
+    doc.setFont('Helvetica', 'bold');
+    doc.setTextColor(0, 0, 255); // Set text color to blue
+    doc.text('Melody Mesh', doc.internal.pageSize.getWidth() / 2, 10, { align: 'center' });
+
+    // Add contact details
+    doc.setFont('Helvetica', 'normal');
+    doc.setTextColor(0, 0, 0); // Set text color to black
+    doc.setFontSize(10); // Set font size to smaller
+    doc.text('Email: melodymeshevents@gmail.com', doc.internal.pageSize.getWidth() / 2, 16, { align: 'center' });
+    doc.text('Contact No: 011 0203030', doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+
+    doc.setFontSize(12); 
+    doc.setFont('Helvetica', 'bold'); 
+    doc.text('Organizer Report', 14, 30); 
+    doc.setFont('Helvetica', 'normal'); 
+
+    let startY = 40; 
+
+    // Loop through each event and its organizers
+    events.forEach((event) => {
+      
+      doc.text(`Event Name: ${event.eventName}`, 14, startY);
+      
+      const data = (organizers[event._id] || []).map((organizer) => ({
+        Name: organizer.organizerName,
+        Role: organizer.organizerRole,
+        Contact: organizer.organizerContact,
+        Email: organizer.organizerEmail,
+        StartTime: new Date(organizer.startTime).toLocaleString(),
+        EndTime: new Date(organizer.endTime).toLocaleString(),
+      }));
+
+      const columns = ['Name', 'Role', 'Contact', 'Email', 'Start Time', 'End Time'];
+      const rows = data.map((item) => [
+        item.Name,
+        item.Role,
+        item.Contact,
+        item.Email,
+        item.StartTime,
+        item.EndTime,
+      ]);
+
+      const tableY = startY + 10;
+
+      // Add the table
+      doc.autoTable({
+        head: [columns],
+        body: rows,
+        startY: tableY,
+      });
+
+      startY = doc.autoTable.previous.finalY + 15; 
+    });
+
+    doc.save('organizer_report.pdf');
+  };
+
   if (loading) {
     return <Typography>Loading...</Typography>;
   }
 
   return (
     <Container>
-      <Typography variant="h5" gutterBottom>
-        Manage Organizers by Event
+      <Typography variant="h4" gutterBottom>
+        Manage Organizers
       </Typography>
+      <TextField
+        label="Search Organizers"
+        variant="outlined"
+        onChange={handleSearchChange}
+        fullWidth
+        margin="normal"
+      />
 
-      {/* Search Bar */}
-      <Box mb={4}>
-        <TextField
-          label="Search Organizers"
-          variant="outlined"
-          fullWidth
-          value={searchQuery}
-          onChange={handleSearchChange}
-          placeholder="Search by name, email, role, or contact"
-        />
-      </Box>
+      <Button variant="contained" color="primary" onClick={generateReport}>
+        Generate Report
+      </Button>
 
-      {events.length === 0 ? (
-        <Typography>No events found.</Typography>
-      ) : (
-        events.map((event) => {
-          // Filter organizers for the current event based on search query
-          const filteredOrganizers = filterOrganizers(organizers[event._id]);
+      {events.map((event) => (
+        <div key={event._id}>
+          <Typography variant="h6" gutterBottom>
+            {event.eventName}
+          </Typography>
 
-          // If there's a search query and no organizers match for this event, skip rendering this event
-          if (searchQuery.trim() && filteredOrganizers.length === 0) {
-            return null;
-          }
+          {organizers[event._id] && (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Role</TableCell>
+                    <TableCell>Contact</TableCell>
+                    <TableCell>Email</TableCell>
+                    <TableCell>Start Time</TableCell>
+                    <TableCell>End Time</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+  {filterOrganizers(organizers[event._id]).length > 0 ? (
+    filterOrganizers(organizers[event._id]).map((organizer) => (
+      <TableRow key={organizer._id}>
+        <TableCell>{organizer.organizerName}</TableCell>
+        <TableCell>{organizer.organizerRole}</TableCell>
+        <TableCell>{organizer.organizerContact}</TableCell>
+        <TableCell>{organizer.organizerEmail}</TableCell>
+        <TableCell>{new Date(organizer.startTime).toLocaleString()}</TableCell>
+        <TableCell>{new Date(organizer.endTime).toLocaleString()}</TableCell>
+        <TableCell>
+          <Button onClick={() => handleEdit(organizer)} variant="contained" color="primary" sx={{ mr: 1 }}>
+            Edit
+          </Button>
+          <Button onClick={() => handleDelete(event._id, organizer._id)} variant="contained" color="error" sx={{ mr: 1 }}>
+            Delete
+          </Button>
+          <Button onClick={() => handleSendNotification(organizer)} variant="contained" color="default">
+            Send Notification
+          </Button>
+        </TableCell>
+      </TableRow>
+    ))
+  ) : (
+    <TableRow>
+      <TableCell colSpan={7} align="center">
+        No matching item found
+      </TableCell>
+    </TableRow>
+  )}
+</TableBody>
 
-          return (
-            <div key={event._id}>
-              <Typography variant="h6" gutterBottom>
-                Event: {event.eventName} ({new Date(event.eventDate).toLocaleDateString()})
-              </Typography>
-
-              {filteredOrganizers.length > 0 ? (
-                <TableContainer component={Paper} style={{ marginBottom: '20px' }}>
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Organizer Name</TableCell>
-                        <TableCell>Role</TableCell>
-                        <TableCell>Contact</TableCell>
-                        <TableCell>Email</TableCell>
-                        <TableCell>Time Slot</TableCell>
-                        <TableCell>Actions</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredOrganizers.map((organizer) => (
-                        <TableRow key={organizer._id}>
-                          <TableCell>{organizer.organizerName}</TableCell>
-                          <TableCell>{organizer.organizerRole}</TableCell>
-                          <TableCell>{organizer.organizerContact}</TableCell>
-                          <TableCell>{organizer.organizerEmail}</TableCell>
-                          <TableCell>
-                            {new Date(organizer.startTime).toLocaleTimeString()} -{' '}
-                            {new Date(organizer.endTime).toLocaleTimeString()}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="contained"
-                              color="primary"
-                              style={{ marginRight: '10px' }}
-                              onClick={() => handleEdit(organizer)}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="contained"
-                              color="secondary"
-                              style={{ marginRight: '10px' }}
-                              onClick={() => handleDelete(event._id, organizer._id)}
-                            >
-                              Delete
-                            </Button>
-                            <Button
-                              variant="contained"
-                              color="default"
-                              onClick={() => handleSendNotification(organizer)}
-                            >
-                              Send Notification
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              ) : (
-                <Box mb={4} p={2} border={1} borderColor="grey.300" borderRadius={4}>
-                  <Typography>No organizers assigned to this event.</Typography>
-                </Box>
-              )}
-            </div>
-          );
-        })
-      )}
-
-      {/* Edit Organizer Modal */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Organizer Details</DialogTitle>
-        <DialogContent>
-          {editOrganizer && (
-            <form>
-              <TextField
-                label="Organizer Name"
-                name="organizerName"
-                value={editOrganizer.organizerName || ''}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Role"
-                name="organizerRole"
-                value={editOrganizer.organizerRole || ''}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Contact"
-                name="organizerContact"
-                value={editOrganizer.organizerContact || ''}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Email"
-                name="organizerEmail"
-                value={editOrganizer.organizerEmail || ''}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-              <LocalizationProvider dateAdapter={AdapterDateFns}>
-                <DateTimePicker
-                  label="Start Time"
-                  value={editOrganizer.startTime}
-                  onChange={(newValue) =>
-                    setEditOrganizer((prev) => ({ ...prev, startTime: newValue }))
-                  }
-                  renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
-                />
-                <DateTimePicker
-                  label="End Time"
-                  value={editOrganizer.endTime}
-                  onChange={(newValue) =>
-                    setEditOrganizer((prev) => ({ ...prev, endTime: newValue }))
-                  }
-                  renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
-                />
-              </LocalizationProvider>
-            </form>
+              </Table>
+            </TableContainer>
           )}
+        </div>
+      ))}
+
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <DialogTitle>Edit Organizer</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Name"
+            name="organizerName"
+            value={editOrganizer?.organizerName || ''}
+            onChange={handleInputChange}
+            fullWidth
+          />
+          <TextField
+            margin="dense"
+            label="Role"
+            name="organizerRole"
+            value={editOrganizer?.organizerRole || ''}
+            onChange={handleInputChange}
+            fullWidth
+          />
+          <TextField
+            margin="dense"
+            label="Contact"
+            name="organizerContact"
+            value={editOrganizer?.organizerContact || ''}
+            onChange={handleInputChange}
+            fullWidth
+          />
+          <TextField
+            margin="dense"
+            label="Email"
+            name="organizerEmail"
+            value={editOrganizer?.organizerEmail || ''}
+            onChange={handleInputChange}
+            fullWidth
+          />
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DateTimePicker
+              label="Start Time"
+              value={editOrganizer?.startTime || null}
+              onChange={(newValue) => setEditOrganizer((prev) => ({ ...prev, startTime: newValue }))}
+              renderInput={(params) => <TextField {...params} fullWidth />}
+            />
+            <DateTimePicker
+              label="End Time"
+              value={editOrganizer?.endTime || null}
+              onChange={(newValue) => setEditOrganizer((prev) => ({ ...prev, endTime: newValue }))}
+              renderInput={(params) => <TextField {...params} fullWidth />}
+            />
+          </LocalizationProvider>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleUpdateSubmit} color="primary" variant="contained">
-            Update
-          </Button>
+          <Button onClick={handleUpdateSubmit}>Update</Button>
         </DialogActions>
       </Dialog>
     </Container>

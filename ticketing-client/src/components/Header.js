@@ -12,7 +12,7 @@ import {
   ListItemText,
 } from '@mui/material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
+import {jwtDecode} from 'jwt-decode'; // Corrected import
 import MenuIcon from '@mui/icons-material/Menu';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useMediaQuery, useTheme } from '@mui/material';
@@ -34,6 +34,7 @@ const Header = () => {
         setFirstName(decodedToken.firstName);
       } catch (error) {
         console.error('Invalid token:', error);
+        setFirstName('');
       }
     } else {
       setFirstName('');
@@ -68,6 +69,7 @@ const Header = () => {
             height: '70px',
           }}
         >
+          {/* Logo/Title */}
           <Typography
             variant="h4"
             sx={{
@@ -88,6 +90,7 @@ const Header = () => {
             </Link>
           </Typography>
 
+          {/* Desktop Navigation Links */}
           {!isMobile && (
             <Box sx={{ display: 'flex', gap: '2rem' }}>
               <Link
@@ -112,6 +115,18 @@ const Header = () => {
               >
                 Contact Us
               </Link>
+              {/* New Feedbacks Link */}
+              <Link
+                to="/public-feedback"
+                style={{
+                  textDecoration: 'none',
+                  color: theme.palette.primary.main,
+                  fontSize: '1.1rem',
+                  fontFamily: "'Poppins', sans-serif",
+                }}
+              >
+                Feedbacks
+              </Link>
               <Link
                 to="/about"
                 style={{
@@ -126,42 +141,43 @@ const Header = () => {
             </Box>
           )}
 
+          {/* User Authentication Buttons */}
           {!isMobile && firstName ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <Typography
-              variant="h6"
-              onClick={() => navigate('/profile')} // Add redirect to profile page
-              sx={{
-                color: theme.palette.primary.main,
-                fontFamily: "'Poppins', sans-serif",
-                cursor: 'pointer', // Add pointer cursor for better UX
-                '&:hover': {
-                  textDecoration: 'underline',
-                },
-              }}
-            >
-              Welcome, {firstName}
-            </Typography>
-            <Button
-              variant="outlined"
-              onClick={handleSignOut}
-              sx={{
-                borderColor: theme.palette.primary.main,
-                color: theme.palette.primary.main,
-                textTransform: 'none',
-                fontFamily: "'Poppins', sans-serif",
-                borderRadius: '20px',
-                padding: '6px 20px',
-                fontSize: '1rem',
-                transition: 'box-shadow 0.3s ease-in-out',
-                '&:hover': {
-                  boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+              <Typography
+                variant="h6"
+                onClick={() => navigate('/profile')} // Redirect to profile page
+                sx={{
+                  color: theme.palette.primary.main,
+                  fontFamily: "'Poppins', sans-serif",
+                  cursor: 'pointer',
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                Welcome, {firstName}
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={handleSignOut}
+                sx={{
                   borderColor: theme.palette.primary.main,
-                },
-              }}
-            >
-              Sign Out
-            </Button>
+                  color: theme.palette.primary.main,
+                  textTransform: 'none',
+                  fontFamily: "'Poppins', sans-serif",
+                  borderRadius: '20px',
+                  padding: '6px 20px',
+                  fontSize: '1rem',
+                  transition: 'box-shadow 0.3s ease-in-out',
+                  '&:hover': {
+                    boxShadow: '0px 8px 20px rgba(0, 0, 0, 0.3)',
+                    borderColor: theme.palette.primary.main,
+                  },
+                }}
+              >
+                Sign Out
+              </Button>
             </Box>
           ) : (
             !isMobile &&
@@ -217,6 +233,7 @@ const Header = () => {
             )
           )}
 
+          {/* Mobile Menu Icon */}
           {isMobile && (
             <IconButton
               edge="end"
@@ -231,14 +248,15 @@ const Header = () => {
         </Toolbar>
       </AppBar>
 
+      {/* Mobile Drawer */}
       <Drawer
         anchor="right"
         open={drawerOpen}
         onClose={toggleDrawer(false)}
         PaperProps={{
           sx: {
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            width: '100%',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            width: '75%',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -256,6 +274,7 @@ const Header = () => {
             position: 'relative',
           }}
         >
+          {/* Close Icon */}
           <IconButton
             sx={{
               position: 'absolute',
@@ -267,6 +286,8 @@ const Header = () => {
           >
             <ArrowBackIcon />
           </IconButton>
+
+          {/* Navigation Links */}
           <List sx={{ width: '100%', textAlign: 'center' }}>
             <ListItem
               button
@@ -302,6 +323,24 @@ const Header = () => {
                 }}
               />
             </ListItem>
+            {/* New Feedbacks Link */}
+            <ListItem
+              button
+              component={Link}
+              to="/public-feedback"
+              onClick={toggleDrawer(false)}
+              sx={{ marginBottom: '2rem', justifyContent: 'center' }}
+            >
+              <ListItemText
+                primary="Feedbacks"
+                sx={{
+                  color: theme.palette.primary.main,
+                  textAlign: 'center',
+                  fontSize: '1.5rem',
+                  fontFamily: "'Poppins', sans-serif",
+                }}
+              />
+            </ListItem>
             <ListItem
               button
               component={Link}
@@ -319,6 +358,7 @@ const Header = () => {
                 }}
               />
             </ListItem>
+            {/* User Authentication Links */}
             {firstName ? (
               <>
                 <ListItem sx={{ marginBottom: '2rem', justifyContent: 'center' }}>
@@ -344,7 +384,7 @@ const Header = () => {
                       color: theme.palette.primary.main,
                       textTransform: 'none',
                       fontFamily: "'Poppins', sans-serif",
-                      width: '100%',
+                      width: '80%',
                       borderRadius: '20px',
                       padding: '6px 20px',
                       fontSize: '1rem',
@@ -371,7 +411,7 @@ const Header = () => {
                         color: theme.palette.primary.main,
                         textTransform: 'none',
                         fontFamily: "'Poppins', sans-serif",
-                        width: '100%',
+                        width: '80%',
                         borderRadius: '20px',
                         padding: '6px 20px',
                         fontSize: '1rem',
@@ -396,7 +436,7 @@ const Header = () => {
                         color: theme.palette.primary.main,
                         textTransform: 'none',
                         fontFamily: "'Poppins', sans-serif",
-                        width: '100%',
+                        width: '80%',
                         borderRadius: '20px',
                         padding: '6px 20px',
                         fontSize: '1rem',

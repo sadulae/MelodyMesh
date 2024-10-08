@@ -6,9 +6,11 @@ import {
   Typography,
   MenuItem,
   FormControlLabel,
-  Checkbox,
+  Switch,
+  Box,
+  Alert,
 } from '@mui/material';
-import { Rating } from '@mui/material'; // For star rating
+import { Rating } from '@mui/material';
 import axios from 'axios';
 
 const FeedbackForm = () => {
@@ -19,12 +21,13 @@ const FeedbackForm = () => {
   const [loading, setLoading] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', email: '' });
+  const [error, setError] = useState('');
 
   // Fetch events and user info from the backend
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/events'); // Fetching events
+        const response = await axios.get('http://localhost:5000/api/events');
         setEvents(response.data);
         setLoading(false);
       } catch (error) {
@@ -35,10 +38,10 @@ const FeedbackForm = () => {
 
     const fetchUserInfo = async () => {
       try {
-        const token = localStorage.getItem('token'); // Assuming you're using JWT for auth
+        const token = localStorage.getItem('token');
         if (token) {
           const response = await axios.get('http://localhost:5000/api/feedback-user', {
-            headers: { Authorization: `Bearer ${token}` }, // Sending token in the headers
+            headers: { Authorization: `Bearer ${token}` },
           });
           setUserInfo({ name: response.data.firstName, email: response.data.email });
         }
@@ -48,14 +51,36 @@ const FeedbackForm = () => {
     };
 
     fetchEvents();
-    fetchUserInfo(); // Fetching user info from feedback-user route
+    fetchUserInfo();
   }, []);
+
+  // Function to validate and sanitize feedback text
+  const sanitizeInput = (text) => {
+    // Regex to detect unwanted sequences of special characters
+    const unwantedCharsRegex = /[;';\][.,/]+/g;
+    // Regex to detect explicit words (replace 'badword' with actual words)
+    const explicitWordsRegex = /(word1|word2|word3)/gi;
+
+    // Replace unwanted characters and explicit words
+    let sanitizedText = text.replace(unwantedCharsRegex, '');
+    sanitizedText = sanitizedText.replace(explicitWordsRegex, '****');
+
+    return sanitizedText;
+  };
+
+  // Handle typing in the feedback text field
+  const handleFeedbackTextChange = (e) => {
+    const sanitizedText = sanitizeInput(e.target.value);
+    setFeedbackText(sanitizedText);
+  };
 
   // Handle feedback submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     if (!selectedEvent || !feedbackText || !rating) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields.');
       return;
     }
 
@@ -69,7 +94,7 @@ const FeedbackForm = () => {
     };
 
     try {
-      const response = await axios.post('http://localhost:5000/api/feedback', feedbackData); // Post feedback
+      const response = await axios.post('http://localhost:5000/api/feedback', feedbackData);
       if (response.status === 201) {
         alert('Feedback submitted successfully');
         setFeedbackText('');
@@ -91,6 +116,12 @@ const FeedbackForm = () => {
           <Typography variant="h4" gutterBottom>
             Submit Feedback
           </Typography>
+
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <form onSubmit={handleSubmit}>
             {/* Select Event */}
@@ -134,36 +165,40 @@ const FeedbackForm = () => {
               multiline
               rows={4}
               value={feedbackText}
-              onChange={(e) => setFeedbackText(e.target.value)}
+              onChange={handleFeedbackTextChange}
               fullWidth
               margin="normal"
               required
             />
 
             {/* Star Rating */}
-            <Typography component="legend">Rating</Typography>
-            <Rating
-              name="rating"
-              value={rating}
-              onChange={(e, newValue) => setRating(newValue)}
-              size="large"
-              precision={1}
-            />
+            <Box mt={2}>
+              <Typography component="legend">Rating</Typography>
+              <Rating
+                name="rating"
+                value={rating}
+                onChange={(e, newValue) => setRating(newValue)}
+                size="large"
+                precision={1}
+              />
+            </Box>
 
-            {/* Anonymous Checkbox */}
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={isAnonymous}
-                  onChange={(e) => setIsAnonymous(e.target.checked)}
-                  color="primary"
-                />
-              }
-              label="Submit as Anonymous"
-            />
+            {/* Anonymous Switch */}
+            <Box mt={2}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={isAnonymous}
+                    onChange={(e) => setIsAnonymous(e.target.checked)}
+                    color="primary"
+                  />
+                }
+                label="Submit as Anonymous"
+              />
+            </Box>
 
             {/* Submit Button */}
-            <Button type="submit" variant="contained" color="primary" fullWidth>
+            <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
               Submit Feedback
             </Button>
           </form>

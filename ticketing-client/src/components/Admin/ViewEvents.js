@@ -1,3 +1,5 @@
+// src/components/Admin/ViewEvents.js
+
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api'; // Import the centralized Axios instance
 import {
@@ -18,12 +20,14 @@ import {
   DialogActions,
   Button,
   Slide,
-  TextField, // Import for the search bar
+  TextField,
 } from '@mui/material';
-import { Edit, Delete, Download } from '@mui/icons-material'; // Import download icon
+import { Edit, Delete, PictureAsPdf } from '@mui/icons-material'; // Use PictureAsPdf icon for PDF generation
 import { useNavigate } from 'react-router-dom';
-import jsPDF from 'jspdf'; // Import jsPDF for PDF generation
-import autoTable from 'jspdf-autotable'; // Optionally use jsPDF autotable plugin for table formatting
+import pdfMake from 'pdfmake/build/pdfmake'; // Import pdfMake for PDF generation
+import pdfFonts from 'pdfmake/build/vfs_fonts'; // Import fonts for pdfMake
+
+pdfMake.vfs = pdfFonts.pdfMake.vfs; // Set the virtual file system for pdfMake
 
 // Transition component for Dialog animation
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -32,8 +36,8 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 
 const ViewEvents = () => {
   const [events, setEvents] = useState([]);
-  const [filteredEvents, setFilteredEvents] = useState([]); // New state for filtered events
-  const [searchQuery, setSearchQuery] = useState(''); // New state for search query
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState(null);
@@ -41,9 +45,9 @@ const ViewEvents = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await api.get('/admin/events'); // Use the centralized API
+      const response = await api.get('/admin/events');
       setEvents(response.data);
-      setFilteredEvents(response.data); // Initialize filtered events with the full event list
+      setFilteredEvents(response.data);
     } catch (error) {
       console.error('Error fetching events:', error);
       setSnackbar({ open: true, message: 'Failed to fetch events', severity: 'error' });
@@ -73,7 +77,7 @@ const ViewEvents = () => {
 
   const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/admin/events/${selectedEventId}`); // Use the centralized API
+      await api.delete(`/admin/events/${selectedEventId}`);
       setSnackbar({ open: true, message: 'Event deleted successfully', severity: 'success' });
       fetchEvents(); // Refresh the events list
     } catch (error) {
@@ -94,26 +98,197 @@ const ViewEvents = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Function to generate a PDF report and trigger a download
-  const handleGenerateReport = () => {
-    const doc = new jsPDF();
-    
-    // Add a title to the PDF
-    doc.text('Event Report', 14, 22);
+  // Function to generate a detailed PDF report of all events
+  const generatePdf = () => {
+    const content = [];
 
-    // Use autoTable to format the event data into a table
-    autoTable(doc, {
-      startY: 30,
-      head: [['Title', 'Date', 'Location']],
-      body: filteredEvents.map((event) => [
-        event.title,
-        new Date(event.date).toLocaleDateString(),
-        event.location,
-      ]),
+    // Header with MelodyMesh and contact info
+    content.push({
+      columns: [
+        {
+          text: 'MelodyMesh',
+          color: '#007BFF', // Blue color
+          fontSize: 24,
+          bold: true,
+          margin: [0, 0, 0, 0],
+        },
+        {
+          text: [
+            { text: 'Email: ', bold: true },
+            'melodymeshevents@gmail.com\n',
+            { text: 'Date of Issue: ', bold: true },
+            new Date().toLocaleDateString(),
+          ],
+          alignment: 'right',
+          margin: [0, 5, 0, 0],
+        },
+      ],
+      margin: [0, 0, 0, 20],
     });
 
-    // Save the generated PDF
-    doc.save('event_report.pdf');
+    // Divider line
+    content.push({
+      canvas: [
+        {
+          type: 'line',
+          x1: 0,
+          y1: 0,
+          x2: 515,
+          y2: 0,
+          lineWidth: 1,
+          lineColor: '#CED4DA',
+        },
+      ],
+      margin: [0, 10, 0, 10],
+    });
+
+    // Group events by date
+    const eventsByDate = {};
+    filteredEvents.forEach((event) => {
+      const eventDate = new Date(event.date).toLocaleDateString();
+      if (!eventsByDate[eventDate]) {
+        eventsByDate[eventDate] = [];
+      }
+      eventsByDate[eventDate].push(event);
+    });
+
+    // Loop through each date group
+    for (const [date, eventsOnDate] of Object.entries(eventsByDate)) {
+      // Date header
+      content.push({
+        text: `Events on ${date}`,
+        style: 'dateHeader',
+        margin: [0, 20, 0, 10],
+      });
+
+      eventsOnDate.forEach((event) => {
+        // Event title
+        content.push({
+          text: event.title,
+          style: 'eventTitle',
+          margin: [0, 10, 0, 5],
+        });
+
+        // Event details
+        content.push({
+          table: {
+            widths: ['*', '*'],
+            body: [
+              [
+                { text: 'Description', style: 'tableHeader' },
+                { text: event.description },
+              ],
+              [
+                { text: 'Location', style: 'tableHeader' },
+                { text: event.location },
+              ],
+              [
+                { text: 'Date & Time', style: 'tableHeader' },
+                { text: new Date(event.date).toLocaleString() },
+              ],
+              [
+                { text: 'Latitude', style: 'tableHeader' },
+                { text: event.lat ? event.lat.toString() : 'N/A' },
+              ],
+              [
+                { text: 'Longitude', style: 'tableHeader' },
+                { text: event.lng ? event.lng.toString() : 'N/A' },
+              ],
+              // Add more rows as needed
+            ],
+          },
+          layout: 'noBorders',
+          margin: [0, 0, 0, 10],
+        });
+
+        // Tiers table
+        if (event.tiers && event.tiers.length > 0) {
+          const tierTableBody = [
+            [
+              { text: 'Tier Name', style: 'tableHeader' },
+              { text: 'Price (Rs.)', style: 'tableHeader' },
+              { text: 'Benefits', style: 'tableHeader' },
+              { text: 'Quantity', style: 'tableHeader' },
+            ],
+          ];
+
+          event.tiers.forEach((tier) => {
+            tierTableBody.push([
+              tier.name,
+              `Rs. ${Number(tier.price).toFixed(2)}`,
+              tier.benefits,
+              tier.quantity.toString(),
+            ]);
+          });
+
+          content.push({
+            table: {
+              headerRows: 1,
+              widths: ['*', 'auto', '*', 'auto'],
+              body: tierTableBody,
+            },
+            layout: 'lightHorizontalLines',
+            margin: [0, 0, 0, 15],
+          });
+        }
+
+        // Divider
+        content.push({
+          canvas: [
+            {
+              type: 'line',
+              x1: 0,
+              y1: 0,
+              x2: 515,
+              y2: 0,
+              lineWidth: 1,
+              lineColor: '#CED4DA',
+            },
+          ],
+          margin: [0, 10, 0, 10],
+        });
+      });
+    }
+
+    const docDefinition = {
+      content,
+      styles: {
+        dateHeader: {
+          fontSize: 16,
+          bold: true,
+          color: '#007BFF',
+          margin: [0, 20, 0, 10],
+        },
+        eventTitle: {
+          fontSize: 14,
+          bold: true,
+          color: '#343A40',
+        },
+        tableHeader: {
+          bold: true,
+          fillColor: '#E9ECEF',
+          color: '#495057',
+          alignment: 'left',
+          margin: [0, 5, 0, 5],
+        },
+        defaultStyle: {
+          fontSize: 12,
+          color: '#212529',
+        },
+      },
+      defaultStyle: {
+        fontSize: 11,
+        color: '#212529',
+      },
+      pageMargins: [40, 60, 40, 60],
+      footer: (currentPage, pageCount) => ({
+        text: `Page ${currentPage} of ${pageCount}`,
+        alignment: 'center',
+        margin: [0, 0, 0, 10],
+      }),
+    };
+
+    pdfMake.createPdf(docDefinition).download('all_events_report.pdf');
   };
 
   return (
@@ -128,19 +303,19 @@ const ViewEvents = () => {
         variant="outlined"
         fullWidth
         value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)} // Update search query as the user types
-        sx={{ mb: 2 }} // Add margin to separate the search bar from the table
+        onChange={(e) => setSearchQuery(e.target.value)}
+        sx={{ mb: 2 }}
       />
 
-      {/* Generate Report Button */}
+      {/* Generate PDF Report Button */}
       <Button
         variant="contained"
         color="primary"
-        startIcon={<Download />}
-        onClick={handleGenerateReport} // Call the function to generate report
+        startIcon={<PictureAsPdf />}
+        onClick={generatePdf}
         sx={{ mb: 2 }}
       >
-        Generate PDF Report
+        Download All Events Report
       </Button>
 
       <Table>
