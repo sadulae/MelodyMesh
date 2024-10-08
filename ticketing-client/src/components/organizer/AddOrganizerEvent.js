@@ -7,6 +7,7 @@ import {
 import { DatePicker, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const AddOrganizerEvent = () => {
   const [name, setName] = useState('');
@@ -22,6 +23,8 @@ const AddOrganizerEvent = () => {
   const [dateError, setDateError] = useState('');
   const [timeError, setTimeError] = useState('');
   const [statusError, setStatusError] = useState('');
+
+  const navigate = useNavigate(); // Initialize useNavigate
 
   // Form validity
   const [isFormValid, setIsFormValid] = useState(false);
@@ -51,7 +54,6 @@ const AddOrganizerEvent = () => {
     }
     const selectedDate = new Date(date);
     const today = new Date();
-    // Remove time part for comparison
     selectedDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
     if (selectedDate < today) {
@@ -85,23 +87,6 @@ const AddOrganizerEvent = () => {
     }
   };
 
-  // Function to handle event name input with character restriction
-  const handleNameChange = (e) => {
-    const input = e.target.value;
-    // Allow only valid characters: letters, numbers, commas, dashes, and spaces
-    const filteredInput = input.replace(/[^A-Za-z0-9,\-\s]/g, '');
-    setName(filteredInput);
-    validateName(filteredInput);
-  };
-
-  // Function to get today's date for minDate in DatePicker
-  const getTodayDate = () => {
-    const today = new Date();
-    // Reset time to midnight
-    today.setHours(0, 0, 0, 0);
-    return today;
-  };
-
   // useEffect to check form validity whenever inputs or errors change
   useEffect(() => {
     const isNameValid = validateName(name);
@@ -109,13 +94,11 @@ const AddOrganizerEvent = () => {
     const isTimeValid = validateTime(time);
     const isStatusValid = validateStatus(status);
     setIsFormValid(isNameValid && isDateValid && isTimeValid && isStatusValid);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [name, date, time, status]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Final validation before submission
     const isNameValid = validateName(name);
     const isDateValid = validateDate(date);
     const isTimeValid = validateTime(time);
@@ -130,19 +113,17 @@ const AddOrganizerEvent = () => {
     setError('');
     setSuccess('');
 
-    // Extract date and time components
     const formattedDate = date.toISOString().split('T')[0]; // 'YYYY-MM-DD'
-    const formattedTime = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // 'HH:MM'
+    const formattedTime = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }); // 'HH:MM'
 
     const eventData = {
       eventName: name.trim(),
-      eventDate: formattedDate, // Send date as 'YYYY-MM-DD'
-      eventTime: formattedTime, // Send time as 'HH:MM'
+      eventDate: formattedDate,
+      eventTime: formattedTime,
       status,
     };
 
     try {
-      // Get token from localStorage for authorization
       const token = localStorage.getItem('token');
 
       if (!token) {
@@ -153,8 +134,8 @@ const AddOrganizerEvent = () => {
 
       const response = await axios.post('http://localhost:5000/api/admin/organizer-add-event', eventData, {
         headers: {
-          'Authorization': `Bearer ${token}`, // Include JWT token in the Authorization header
-          'Content-Type': 'application/json', // Explicitly set Content-Type
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
 
@@ -164,18 +145,18 @@ const AddOrganizerEvent = () => {
         setDate(null);
         setTime(null);
         setStatus('upcoming');
+        
+        // Redirect to manage events page
+        navigate('/admin/organizer-manage-events');
       } else {
         setError('Unexpected response from the server.');
       }
     } catch (error) {
       if (error.response) {
-        console.error('Error response:', error.response.data);
         setError('Failed to add event: ' + error.response.data.message);
       } else if (error.request) {
-        console.error('Error request:', error.request);
         setError('Failed to add event. Please try again.');
       } else {
-        console.error('Error message:', error.message);
         setError('An unexpected error occurred.');
       }
     } finally {
@@ -199,11 +180,11 @@ const AddOrganizerEvent = () => {
                 variant="outlined"
                 fullWidth
                 value={name}
-                onChange={handleNameChange}
+                onChange={(e) => setName(e.target.value)}
                 required
                 error={!!nameError}
                 helperText={nameError}
-                inputProps={{ maxLength: 100 }} // Optional: limit max length
+                inputProps={{ maxLength: 100 }}
               />
             </Grid>
 
@@ -216,7 +197,7 @@ const AddOrganizerEvent = () => {
                   setDate(newValue);
                   validateDate(newValue);
                 }}
-                minDate={getTodayDate()}
+                minDate={new Date()}
                 renderInput={(params) => (
                   <TextField
                     {...params}

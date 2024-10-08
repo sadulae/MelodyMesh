@@ -1,5 +1,3 @@
-// src/components/Admin/ManageBandsPerformers.js
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -22,7 +20,9 @@ import {
   CircularProgress,
   Box,
 } from '@mui/material';
-import { Add, Remove, Edit, Delete } from '@mui/icons-material';
+import { Add, Remove, Edit, Delete, PictureAsPdf } from '@mui/icons-material';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const ManageBandsPerformers = () => {
   const [events, setEvents] = useState([]);
@@ -35,20 +35,6 @@ const ManageBandsPerformers = () => {
   const [loading, setLoading] = useState(false); // Loading state for event selection
   const [openDialog, setOpenDialog] = useState(false); // Dialog open state
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' }); // Snackbar state
-
-  // Error states for edit dialog
-  const [editErrors, setEditErrors] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    paymentAmount: '',
-  });
-
-  // Regex Patterns
-  const namePattern = /^[A-Za-z0-9 ]*$/;
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phonePattern = /^[0-9()+\- ]*$/; // Allows numbers, parentheses, plus, minus, and spaces
-  const paymentAmountPattern = /^\d+(\.\d{1,2})?$/;
 
   // Fetch all events on component mount
   useEffect(() => {
@@ -164,7 +150,6 @@ const ManageBandsPerformers = () => {
         return;
       }
     }
-    setEditErrors({ name: '', email: '', phone: '', paymentAmount: '' }); // Reset errors
     setOpenDialog(true); // Open dialog for editing
   };
 
@@ -174,59 +159,10 @@ const ManageBandsPerformers = () => {
     setEditData(null);
     setEditType(null);
     setEditIndex(null);
-    setEditErrors({ name: '', email: '', phone: '', paymentAmount: '' });
   };
 
   // Handle save of the edited data
   const handleSave = async () => {
-    // Validate before saving
-    const { name, email, phone, paymentAmount } = editData;
-    let valid = true;
-    let errors = { name: '', email: '', phone: '', paymentAmount: '' };
-
-    // Name Validation
-    if (!name.trim()) {
-      errors.name = `${editType === 'band' ? 'Band' : 'Performer'} name is required`;
-      valid = false;
-    } else if (!namePattern.test(name.trim())) {
-      errors.name = 'Only letters and numbers are allowed';
-      valid = false;
-    }
-
-    // Email Validation
-    if (!email.trim()) {
-      errors.email = 'Email is required';
-      valid = false;
-    } else if (!emailPattern.test(email.trim())) {
-      errors.email = 'Invalid email format';
-      valid = false;
-    }
-
-    // Phone Validation
-    if (!phone.trim()) {
-      errors.phone = 'Phone number is required';
-      valid = false;
-    } else if (!phonePattern.test(phone.trim())) {
-      errors.phone = 'Invalid phone number format';
-      valid = false;
-    }
-
-    // Payment Amount Validation
-    if (!paymentAmount.toString().trim()) {
-      errors.paymentAmount = 'Payment amount is required';
-      valid = false;
-    } else if (!paymentAmountPattern.test(paymentAmount.toString().trim())) {
-      errors.paymentAmount = 'Invalid payment amount';
-      valid = false;
-    }
-
-    setEditErrors(errors);
-
-    if (!valid) {
-      setSnackbar({ open: true, message: 'Please fix the errors in the form.', severity: 'error' });
-      return;
-    }
-
     let updatedBands = [...bands];
     let updatedPerformers = [...performers];
 
@@ -263,41 +199,56 @@ const ManageBandsPerformers = () => {
     }
   };
 
-  // Handle input changes in the dialog with validations
+  // Handle input changes in the dialog
   const handleInputChange = (field, value) => {
-    // Update editData
     setEditData((prev) => ({ ...prev, [field]: value }));
+  };
 
-    // Validate input
-    let errorMsg = '';
+  // Generate PDF report for the selected event
+  const generatePDF = async () => {
+    const doc = new jsPDF('p', 'pt');
 
-    if (field === 'name') {
-      if (!value.trim()) {
-        errorMsg = `${editType === 'band' ? 'Band' : 'Performer'} name is required`;
-      } else if (!namePattern.test(value.trim())) {
-        errorMsg = 'Only letters and numbers are allowed';
-      }
-    } else if (field === 'email') {
-      if (!value.trim()) {
-        errorMsg = 'Email is required';
-      } else if (!emailPattern.test(value.trim())) {
-        errorMsg = 'Invalid email format';
-      }
-    } else if (field === 'phone') {
-      if (!value.trim()) {
-        errorMsg = 'Phone number is required';
-      } else if (!phonePattern.test(value.trim())) {
-        errorMsg = 'Invalid phone number format';
-      }
-    } else if (field === 'paymentAmount') {
-      if (!value.toString().trim()) {
-        errorMsg = 'Payment amount is required';
-      } else if (!paymentAmountPattern.test(value.toString().trim())) {
-        errorMsg = 'Invalid payment amount';
+    // Set title for the PDF
+    doc.setFontSize(18);
+    doc.text('Event Report', 40, 50);
+
+    if (selectedEvent) {
+      const selectedEventData = events.find((event) => event._id === selectedEvent);
+      if (selectedEventData) {
+        doc.setFontSize(14);
+        doc.text(`Event Name: ${selectedEventData.eventName}`, 40, 80);
+        doc.text(`Event Date: ${new Date(selectedEventData.eventDate).toLocaleDateString()}`, 40, 100);
       }
     }
 
-    setEditErrors((prev) => ({ ...prev, [field]: errorMsg }));
+    // Add Bands section
+    doc.setFontSize(16);
+    doc.text('Bands:', 40, 140);
+    bands.forEach((band, index) => {
+      doc.setFontSize(12);
+      doc.text(`Band ${index + 1}: ${band.name}`, 40, 160 + index * 20);
+      doc.text(`Email: ${band.email}`, 40, 180 + index * 20);
+      doc.text(`Phone: ${band.phone}`, 40, 200 + index * 20);
+      doc.text(`Payment Amount: $${band.paymentAmount}`, 40, 220 + index * 20);
+      doc.text(`Payment Status: ${band.paymentStatus}`, 40, 240 + index * 20);
+    });
+
+    // Add Performers section
+    const performersY = 260 + bands.length * 20;
+    doc.setFontSize(16);
+    doc.text('Performers:', 40, performersY);
+    performers.forEach((performer, index) => {
+      const yPosition = performersY + (index + 1) * 20;
+      doc.setFontSize(12);
+      doc.text(`Performer ${index + 1}: ${performer.name}`, 40, yPosition);
+      doc.text(`Email: ${performer.email}`, 40, yPosition + 20);
+      doc.text(`Phone: ${performer.phone}`, 40, yPosition + 40);
+      doc.text(`Payment Amount: $${performer.paymentAmount}`, 40, yPosition + 60);
+      doc.text(`Payment Status: ${performer.paymentStatus}`, 40, yPosition + 80);
+    });
+
+    // Save the PDF
+    doc.save('event_report.pdf');
   };
 
   return (
@@ -447,6 +398,18 @@ const ManageBandsPerformers = () => {
               )}
             </Grid>
           )}
+
+          {/* Generate Report Button */}
+          <Box display="flex" justifyContent="center" sx={{ mt: 4 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<PictureAsPdf />}
+              onClick={generatePDF}
+            >
+              Generate Report
+            </Button>
+          </Box>
         </>
       )}
 
@@ -455,98 +418,38 @@ const ManageBandsPerformers = () => {
         <DialogTitle>Edit {editType === 'performer' ? 'Performer' : 'Band'} Details</DialogTitle>
         <DialogContent>
           <Box component="form" noValidate sx={{ mt: 2 }}>
-            {/* Name Field */}
             <TextField
               margin="normal"
               label="Name"
               fullWidth
-              required
               value={editData?.name || ''}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              onKeyPress={(e) => {
-                if (!/[A-Za-z0-9 ]/.test(e.key)) {
-                  e.preventDefault();
-                }
-              }}
-              onPaste={(e) => {
-                const pasteData = e.clipboardData.getData('text');
-                if (!namePattern.test(pasteData)) {
-                  e.preventDefault();
-                }
-              }}
-              error={Boolean(editErrors.name)}
-              helperText={editErrors.name}
             />
-
-            {/* Email Field */}
             <TextField
               margin="normal"
               label="Email"
               type="email"
               fullWidth
-              required
               value={editData?.email || ''}
               onChange={(e) => handleInputChange('email', e.target.value)}
-              onPaste={(e) => {
-                const pasteData = e.clipboardData.getData('text');
-                if (!emailPattern.test(pasteData)) {
-                  e.preventDefault();
-                }
-              }}
-              error={Boolean(editErrors.email)}
-              helperText={editErrors.email}
             />
-
-            {/* Phone Number Field */}
             <TextField
               margin="normal"
               label="Phone"
               type="tel"
               fullWidth
-              required
               value={editData?.phone || ''}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              onKeyPress={(e) => {
-                if (!/[0-9()+\- ]/.test(e.key)) {
-                  e.preventDefault();
-                }
-              }}
-              onPaste={(e) => {
-                const pasteData = e.clipboardData.getData('text');
-                if (!phonePattern.test(pasteData)) {
-                  e.preventDefault();
-                }
-              }}
-              error={Boolean(editErrors.phone)}
-              helperText={editErrors.phone}
             />
-
-            {/* Payment Amount Field */}
             <TextField
               margin="normal"
-              label="Payment Amount ($)"
+              label="Payment Amount"
               type="number"
               fullWidth
-              required
               value={editData?.paymentAmount || ''}
               onChange={(e) => handleInputChange('paymentAmount', e.target.value)}
-              inputProps={{ min: "0", step: "0.01" }}
-              onKeyPress={(e) => {
-                if (!/[0-9.]/.test(e.key)) {
-                  e.preventDefault();
-                }
-              }}
-              onPaste={(e) => {
-                const pasteData = e.clipboardData.getData('text');
-                if (!paymentAmountPattern.test(pasteData)) {
-                  e.preventDefault();
-                }
-              }}
-              error={Boolean(editErrors.paymentAmount)}
-              helperText={editErrors.paymentAmount}
+              InputProps={{ inputProps: { min: 0, step: '0.01' } }}
             />
-
-            {/* Payment Status Field */}
             <FormControl fullWidth margin="normal">
               <InputLabel id="payment-status-label">Payment Status</InputLabel>
               <Select
@@ -565,22 +468,7 @@ const ManageBandsPerformers = () => {
           <Button onClick={handleDialogClose} color="inherit">
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            color="primary"
-            variant="contained"
-            disabled={
-              !editData ||
-              !editData.name.trim() ||
-              !editData.email.trim() ||
-              !editData.phone.trim() ||
-              !editData.paymentAmount.toString().trim() ||
-              Boolean(editErrors.name) ||
-              Boolean(editErrors.email) ||
-              Boolean(editErrors.phone) ||
-              Boolean(editErrors.paymentAmount)
-            }
-          >
+          <Button onClick={handleSave} color="primary" variant="contained">
             Save
           </Button>
         </DialogActions>
