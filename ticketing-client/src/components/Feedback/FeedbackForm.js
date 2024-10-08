@@ -21,7 +21,7 @@ const FeedbackForm = () => {
   const [loading, setLoading] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', email: '' });
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); // Version 1: Keep the 'error' state from version 1
 
   // Fetch events and user info from the backend
   useEffect(() => {
@@ -56,28 +56,21 @@ const FeedbackForm = () => {
 
   // Function to validate and sanitize feedback text
   const sanitizeInput = (text) => {
-    // Regex to detect unwanted sequences of special characters
     const unwantedCharsRegex = /[;';\][.,/]+/g;
-    // Regex to detect explicit words (replace 'badword' with actual words)
     const explicitWordsRegex = /(word1|word2|word3)/gi;
-
-    // Replace unwanted characters and explicit words
     let sanitizedText = text.replace(unwantedCharsRegex, '');
     sanitizedText = sanitizedText.replace(explicitWordsRegex, '****');
-
     return sanitizedText;
   };
 
-  // Handle typing in the feedback text field
   const handleFeedbackTextChange = (e) => {
     const sanitizedText = sanitizeInput(e.target.value);
     setFeedbackText(sanitizedText);
   };
 
-  // Handle feedback submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError(''); // Version 1: Keep the original error handling
 
     if (!selectedEvent || !feedbackText || !rating) {
       setError('Please fill in all fields.');
