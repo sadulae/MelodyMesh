@@ -19,6 +19,7 @@ const FeedbackForm = () => {
   const [loading, setLoading] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [userInfo, setUserInfo] = useState({ name: '', email: '' });
+  const [feedbackError, setFeedbackError] = useState(''); // New state for feedback error
 
   // Fetch events and user info from the backend
   useEffect(() => {
@@ -51,13 +52,32 @@ const FeedbackForm = () => {
     fetchUserInfo(); // Fetching user info from feedback-user route
   }, []);
 
+  // Validate feedback text
+  const validateFeedback = () => {
+    if (feedbackText.length < 10) {
+      setFeedbackError('Feedback must be at least 10 characters long');
+      return false;
+    }
+    if (feedbackText.length > 500) {
+      setFeedbackError('Feedback cannot exceed 500 characters');
+      return false;
+    }
+    setFeedbackError('');
+    return true;
+  };
+
   // Handle feedback submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate form fields
     if (!selectedEvent || !feedbackText || !rating) {
       alert('Please fill in all fields');
       return;
     }
+
+    // Validate feedback text
+    if (!validateFeedback()) return;
 
     const feedbackData = {
       eventId: selectedEvent,
@@ -138,6 +158,8 @@ const FeedbackForm = () => {
               fullWidth
               margin="normal"
               required
+              error={!!feedbackError} // Show error if there's a validation issue
+              helperText={feedbackError} // Display error message
             />
 
             {/* Star Rating */}

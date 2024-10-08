@@ -21,6 +21,9 @@ import {
 import { DataGrid } from '@mui/x-data-grid';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import axios from 'axios';
+import jsPDF from 'jspdf';  // Import jsPDF for PDF generation
+import 'jspdf-autotable'; // Import the autoTable plugin for jsPDF  
+import emailjs from 'emailjs-com'; // Import EmailJS for sending emails
 
 const AdminFeedback = () => {
   const [events, setEvents] = useState([]);
@@ -33,9 +36,11 @@ const AdminFeedback = () => {
     message: '',
     severity: 'success',
   });
-  const [selectedFeedback, setSelectedFeedback] = useState(null); // Feedback to edit/delete
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false); // Edit dialog state
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false); // Delete dialog state
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  // const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReplyDialogOpen, setIsReplyDialogOpen] = useState(false); // Update for reply dialog
+  const [replyMessage, setReplyMessage] = useState(''); // Update for reply message
 
   // Fetch events and feedback
   useEffect(() => {
@@ -76,42 +81,172 @@ const AdminFeedback = () => {
     }
   };
 
-  // Open the edit dialog
-  const handleEditClick = (feedback) => {
-    setSelectedFeedback({ ...feedback }); // Clone to prevent direct state mutation
-    setIsEditDialogOpen(true);
+  // Function to calculate average rating for an event
+  const calculateAverageRating = (feedbacks) => {
+    const totalRating = feedbacks.reduce((sum, fb) => sum + fb.rating, 0);
+    return (totalRating / feedbacks.length).toFixed(2);
   };
 
-  // Handle input changes in the edit dialog
-  const handleEditInputChange = (field, value) => {
-    setSelectedFeedback((prev) => ({ ...prev, [field]: value }));
-  };
+  // Convert the image to base64 format
+const getBase64ImageFromURL = async (url) => {
+  const img = new Image();
+  img.src = url;
+  return new Promise((resolve) => {
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+  });
+};
 
-  // Save edited feedback
-  const handleSaveEdit = async () => {
-    try {
-      const { _id, feedbackText, rating } = selectedFeedback;
-      // Send PUT request to update feedback
-      await axios.put(`http://localhost:5000/api/feedback/${_id}`, {
-        feedbackText,
-        rating,
+// Function to handle PDF generation
+const generateReport = async () => {
+  const doc = new jsPDF();
+
+  // Add the logo image to the top-right corner
+  const logoUrl = `${process.env.PUBLIC_URL}/logom.png`; // Path to logo in the public folder
+  const logoBase64 = await getBase64ImageFromURL(logoUrl);
+  doc.addImage(logoBase64, 'PNG', 150, 10, 50, 20); // Add the logo (adjust x, y, width, height)
+
+  // Title for the report
+  doc.setFontSize(18);
+  doc.text('Event Feedback Report', 14, 20);
+
+  // Start after the logo
+  let yPos = 40;
+
+  // Loop through events and feedbacks
+  for (const event of events) {
+    const feedbacks = feedbackData[event._id] || [];
+
+    if (feedbacks.length > 0) {
+      // Section title for the event
+      doc.setFontSize(14);
+      doc.text(`Event: ${event.title}`, 14, yPos);
+      yPos += 6;
+      doc.setFontSize(12);
+      doc.text(`Total Feedback: ${feedbacks.length}`, 14, yPos);
+      yPos += 6;
+      doc.text(`Average Rating: ${calculateAverageRating(feedbacks)}`, 14, yPos);
+      yPos += 10;
+
+      // Feedback table for the event
+      doc.autoTable({
+        startY: yPos,
+        head: [['User', 'Feedback', 'Rating']],
+        body: feedbacks.map((fb) => [
+          fb.anonymous ? 'Anonymous' : `${fb.name} (${fb.email})`,
+          fb.feedbackText,
+          fb.rating,
+        ]),
+        margin: { top: 10 },
+        styles: { fontSize: 10, cellPadding: 3 },
       });
-      setSnackbar({
-        open: true,
-        message: 'Feedback updated successfully.',
-        severity: 'success',
-      });
-      fetchEventsAndFeedback(); // Refresh feedback after update
-    } catch (error) {
-      console.error('Error updating feedback:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to update feedback.',
-        severity: 'error',
-      });
+
+      // Update yPos after the table
+      yPos = doc.autoTable.previous.finalY + 10;
+
+      // Add a separator line between events
+      doc.setDrawColor(200, 200, 200);
+      doc.line(14, yPos, 196, yPos);
+      yPos += 10;
     }
-    setIsEditDialogOpen(false);
-    setSelectedFeedback(null);
+  }
+
+  // Save the generated PDF to the user's computer
+  doc.save('event-feedback-report.pdf');
+};
+
+
+  // // Open the edit dialog
+  // const handleEditClick = (feedback) => {
+  //   setSelectedFeedback({ ...feedback });
+  //   setIsEditDialogOpen(true);
+  // };
+
+  // // Handle input changes in the edit dialog
+  // const handleEditInputChange = (field, value) => {
+  //   setSelectedFeedback((prev) => ({ ...prev, [field]: value }));
+  // };
+
+  // // Save edited feedback
+  // const handleSaveEdit = async () => {
+  //   try {
+  //     const { _id, feedbackText, rating } = selectedFeedback;
+  //     // Send PUT request to update feedback
+  //     await axios.put(`http://localhost:5000/api/feedback/${_id}`, {
+  //       feedbackText,
+  //       rating,
+  //     });
+  //     setSnackbar({
+  //       open: true,
+  //       message: 'Feedback updated successfully.',
+  //       severity: 'success',
+  //     });
+  //     fetchEventsAndFeedback(); // Refresh feedback after update
+  //   } catch (error) {
+  //     console.error('Error updating feedback:', error);
+  //     setSnackbar({
+  //       open: true,
+  //       message: 'Failed to update feedback.',
+  //       severity: 'error',
+  //     });
+  //   }
+  //   setIsEditDialogOpen(false);
+  //   setSelectedFeedback(null);
+  // };
+
+  // Handle reply button click
+  const handleReplyClick = (feedback) => {
+    setSelectedFeedback(feedback);
+    setIsReplyDialogOpen(true); // Open the reply dialog
+  };
+
+  // Handle reply input change
+  const handleReplyInputChange = (e) => {
+    setReplyMessage(e.target.value);
+  };
+
+  // Send the reply email using EmailJS
+  const handleSendReply = async () => {
+    if (selectedFeedback) {
+      const templateParams = {
+        user_email: selectedFeedback.email, // Use the feedback submitter's email
+        reply_message: replyMessage,
+        event_title: selectedFeedback.eventTitle, // Assuming eventTitle is part of the feedback object
+      };
+
+      try {
+        await emailjs.send(
+          'service_7y9u68n', // Replace with your EmailJS service ID
+          'template_pabj3pr', // Replace with your EmailJS template ID
+          templateParams,
+          '0IB2_j_7JEJvkWewH' // Replace with your EmailJS user ID
+        );
+
+        setSnackbar({
+          open: true,
+          message: 'Reply sent successfully!',
+          severity: 'success',
+        });
+
+        // Close the dialog and reset the form
+        setIsReplyDialogOpen(false);
+        setReplyMessage('');
+        setSelectedFeedback(null);
+      } catch (error) {
+        console.error('Error sending reply:', error);
+        setSnackbar({
+          open: true,
+          message: 'Failed to send reply.',
+          severity: 'error',
+        });
+      }
+    }
   };
 
   // Open the delete confirmation dialog
@@ -221,10 +356,10 @@ const AdminFeedback = () => {
             variant="outlined"
             color="primary"
             size="small"
-            onClick={() => handleEditClick(params.value)}
+            onClick={() => handleReplyClick(params.value)}
             style={{ marginRight: 8 }}
           >
-            Edit
+            Reply
           </Button>
           <Button
             variant="outlined"
@@ -241,19 +376,23 @@ const AdminFeedback = () => {
 
   return (
     <Container>
-      {/* Header */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        my={4}
-      >
+      <Box display="flex" justifyContent="space-between" alignItems="center" my={4}>
         <Typography variant="h4" gutterBottom>
           Manage Feedback for All Events
         </Typography>
-        <Button variant="contained" color="primary" onClick={fetchEventsAndFeedback}>
-          Refresh
-        </Button>
+        <Box>
+          <Button variant="contained" color="primary" onClick={fetchEventsAndFeedback}>
+            Refresh
+          </Button>
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={generateReport}
+            style={{ marginLeft: 10 }}  // Add some space between buttons
+          >
+            Generate Report
+          </Button>
+        </Box>
       </Box>
 
       {/* Search Bar */}
@@ -325,7 +464,7 @@ const AdminFeedback = () => {
       )}
 
       {/* Edit Feedback Dialog */}
-      <Dialog
+      {/* <Dialog
         open={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         aria-labelledby="edit-feedback-dialog-title"
@@ -362,7 +501,7 @@ const AdminFeedback = () => {
             Save
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
 
       {/* Delete Confirmation Dialog */}
       <Dialog
@@ -390,15 +529,42 @@ const AdminFeedback = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Reply Dialog */}
+      <Dialog
+        open={isReplyDialogOpen}
+        onClose={() => setIsReplyDialogOpen(false)}
+        aria-labelledby="reply-feedback-dialog-title"
+      >
+        <DialogTitle id="reply-feedback-dialog-title">Reply to Feedback</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            margin="dense"
+            label="Your Reply"
+            variant="outlined"
+            multiline
+            minRows={3}
+            value={replyMessage}
+            onChange={handleReplyInputChange}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsReplyDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSendReply} color="primary" variant="contained">
+            Send Reply
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={handleSnackbarClose}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
         <Alert
-          onClose={handleSnackbarClose}
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
           severity={snackbar.severity}
           sx={{ width: '100%' }}
           variant="filled"
